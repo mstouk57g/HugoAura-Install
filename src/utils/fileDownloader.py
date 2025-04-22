@@ -1,0 +1,127 @@
+import requests
+import zipfile
+import shutil
+import os
+from pathlib import Path
+from logger.initLogger import log
+from config.config import (
+    # GITHUB_API_URL,
+    BASE_DOWNLOAD_URL,
+    ASAR_FILENAME,
+    ZIP_FILENAME,
+    TEMP_INSTALL_DIR,
+)
+
+
+"""
+def get_latest_release_tag() -> str | None:
+    log.info(
+        f"正在从 {GITHUB_API_URL} 获取 HugoAura 的最新 Release 版本信息, 请稍等..."
+    )
+    try:
+        response = requests.get(GITHUB_API_URL, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        tag_name = data.get("tag_name")
+        if tag_name:
+            log.success(f"获取成功, 最新版本 Tag: {tag_name}")
+            return tag_name
+        else:
+            log.error("获取失败, 未能在响应中找到 'tag_name' 信息, 请检查您的网络连接")
+            log.info(f"您可以尝试手动输入最新版本 Tag:")
+            userInputVersion = input()
+            return userInputVersion
+    except requests.exceptions.RequestException as e:
+        log.error(f"拉取版本信息时发生网络错误: {e}")
+        log.info(f"您可以尝试手动输入最新版本 Tag:")
+        userInputVersion = input()
+        return userInputVersion
+    except Exception as e:
+        log.error(f"拉取版本信息时发生未知错误: {e}")
+        return None
+"""
+
+
+def download_file(url: str, dest_folder: str, filename: str) -> Path | None:
+    dest_path = Path(dest_folder) / filename
+    log.info(f"正在从 {url} 下载 {filename}, 目标目录: {dest_path}")
+
+    try:
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with requests.get(url, stream=True, timeout=60) as r:
+            r.raise_for_status()
+            total_size = int(r.headers.get("content-length", 0))
+            log.info(
+                f"文件大小: {total_size / 1024 / 1024:.2f} MB"
+                if total_size
+                else "文件大小: 未知"
+            )
+
+            with open(dest_path, "wb") as f:
+                shutil.copyfileobj(r.raw, f)
+
+        log.success(f"文件 {filename} 下载成功。")
+        return dest_path
+    except requests.exceptions.RequestException as e:
+        log.error(f"下载文件 {filename} 时发生网络错误: {e}")
+        if dest_path.exists():
+            os.remove(dest_path)
+        return None
+    except Exception as e:
+        log.error(f"写入文件 {filename} 时发生意外错误: {e}")
+        if dest_path.exists():
+            os.remove(dest_path)
+        return None
+
+
+def unzip_file(zip_path: Path, extract_to: Path) -> bool:
+    log.info(f"正在解压 {zip_path.name}, 目标目录: {extract_to}")
+    try:
+        extract_to.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(zip_path, "r") as zf:
+            zf.extractall(extract_to)
+        log.success(f"解压 {zip_path.name} 成功。")
+        return True
+    except zipfile.BadZipFile:
+        log.error(f"解压时发生错误: {zip_path.name} 不是一个有效的 ZIP 文件。")
+        return False
+    except Exception as e:
+        log.error(f"解压时发生错误: 文件名称: {zip_path.name} | 错误: {e}")
+        return False
+
+
+def download_latest_release_files() -> tuple[Path | None, Path | None]:
+    log.info(f"准备下载 HugoAura 资源文件...")
+
+    temp_dir = Path(TEMP_INSTALL_DIR)
+    if temp_dir.exists():
+        log.info(f"正在清理旧的临时文件夹: {temp_dir}")
+        try:
+            shutil.rmtree(temp_dir)
+        except OSError as e:
+            log.error(f"清理失败 {temp_dir}, 请确保当前用户有 %TEMP% 的写入权限: {e}")
+            return None, None
+    try:
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        log.info(f"成功创建临时文件夹: {temp_dir}")
+    except OSError as e:
+        log.error(
+            f"未能创建临时文件夹 {temp_dir}, 错误信息: {e} | 请确保当前用户有 %TEMP% 的写入权限"
+        )
+        return None, None
+
+    asar_url = f"{BASE_DOWNLOAD_URL}@main/{ASAR_FILENAME}"
+    zip_url = f"{BASE_DOWNLOAD_URL}@main/{ZIP_FILENAME}"
+
+    downloaded_asar_path = download_file(asar_url, str(temp_dir), ASAR_FILENAME)
+    if not downloaded_asar_path:
+        log.critical("下载 app-patched.asar 时发生错误, 安装进程终止。")
+        return None, None
+
+    downloaded_zip_path = download_file(zip_url, str(temp_dir), ZIP_FILENAME)
+    if not downloaded_zip_path:
+        log.critical("下载 aura.zip 时发生错误, 安装进程终止。")
+        return downloaded_asar_path, None
+
+    return downloaded_asar_path, downloaded_zip_path
