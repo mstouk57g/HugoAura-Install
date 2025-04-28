@@ -127,7 +127,7 @@ def run_installation():
                         f"未能删除 {original_asar_path}: {e} | 旧的 ASAR 可能仍被占用中..."
                     )
                     log.info("准备重试删除...")
-                    time.sleep(0.25)
+                    time.sleep(0.5)
                     del_original_asar()
             else:
                 log.info(f"未找到旧的 {config.TARGET_ASAR_NAME}, 跳过删除...")

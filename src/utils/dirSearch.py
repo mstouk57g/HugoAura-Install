@@ -26,8 +26,8 @@ def find_seewo_resources_dir() -> str | None:
         return None
     elif len(matches) > 1:
         log.warning(f"找到了多个匹配的目录: {[str(p) for p in matches]}")
-        found_path = str(matches[0])
-        log.info(f"默认使用第一个匹配的目录: {found_path}")
+        found_path = str(matches[-1])
+        log.info(f"默认使用最后一个匹配的目录: {found_path}")
     else:
         found_path = str(matches[0])
         log.info(f"匹配成功, 希沃管家安装目录: {found_path}")

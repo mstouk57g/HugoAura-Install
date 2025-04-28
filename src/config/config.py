@@ -11,7 +11,7 @@ ZIP_FILENAME = "aura.zip"
 TARGET_ASAR_NAME = "app.asar"
 EXTRACTED_FOLDER_NAME = "aura"
 
-BASE_DOWNLOAD_URL = f"https://testingcf.jsdelivr.net/gh/{GITHUB_OWNER}/{GITHUB_DL_REPO}"
+BASE_DOWNLOAD_URL = f"https://gcore.jsdelivr.net/gh/{GITHUB_OWNER}/{GITHUB_DL_REPO}"
 GITHUB_API_URL = (
     f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/releases/latest"
 )

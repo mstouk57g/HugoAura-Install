@@ -1,4 +1,5 @@
 import requests
+import time
 import zipfile
 import shutil
 import os
@@ -49,7 +50,11 @@ def download_file(url: str, dest_folder: str, filename: str) -> Path | None:
     try:
         dest_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with requests.get(url, stream=True, timeout=60) as r:
+        downloadHeaders = {
+            "Accept-Encoding": "",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+        }
+        with requests.get(url, stream=True, timeout=60, headers=downloadHeaders) as r:
             r.raise_for_status()
             total_size = int(r.headers.get("content-length", 0))
             log.info(
@@ -111,8 +116,9 @@ def download_latest_release_files() -> tuple[Path | None, Path | None]:
         )
         return None, None
 
-    asar_url = f"{BASE_DOWNLOAD_URL}@main/{ASAR_FILENAME}"
-    zip_url = f"{BASE_DOWNLOAD_URL}@main/{ZIP_FILENAME}"
+    cur_timestamp = str(time.time()).replace(".", "")
+    asar_url = f"{BASE_DOWNLOAD_URL}@main/{ASAR_FILENAME}?ts={cur_timestamp}"
+    zip_url = f"{BASE_DOWNLOAD_URL}@main/{ZIP_FILENAME}?ts={cur_timestamp}"
 
     downloaded_asar_path = download_file(asar_url, str(temp_dir), ASAR_FILENAME)
     if not downloaded_asar_path:
