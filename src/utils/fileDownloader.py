@@ -84,10 +84,10 @@ def download_file_multi_sources(filename: str, dest_folder: str) -> Path | None:
     """
     尝试从多个下载源下载文件，直到成功或所有源都失败。
     """
-    from urllib.parse import urljoin
+
     cur_timestamp = str(time.time()).replace(".", "")
     for base_url in BASE_DOWNLOAD_URLS:
-        # 兼容 jsdelivr 及 github raw 路径
+        # 兼容 JSDelivr 及 GitHub Raw 路径
         if "jsdelivr" in base_url:
             url = f"{base_url}/{filename}?ts={cur_timestamp}"
         else:
@@ -97,7 +97,7 @@ def download_file_multi_sources(filename: str, dest_folder: str) -> Path | None:
             return result
         else:
             log.warning(f"从 {url} 下载失败，尝试下一个源...")
-    log.critical(f"所有下载源均失败，无法下载 {filename}")
+    log.critical(f"所有下载源均失败, 无法下载 {filename}")
     return None
 
 

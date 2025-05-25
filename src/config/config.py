@@ -15,6 +15,9 @@ BASE_DOWNLOAD_URLS = [
     f"https://github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/raw/main",  # GitHub 源
     f"https://gitclone.com/github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/raw/main",  # gitclone 镜像
     f"https://bgithub.xyz/{GITHUB_OWNER}/{GITHUB_DL_REPO}/raw/main",  # bgithub 镜像
+    f"https://ghfast.top/github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/raw/main",  # GHFast 镜像
+    f"https://gcore.jsdelivr.net/gh/{GITHUB_OWNER}/{GITHUB_DL_REPO}",  # GCore JSDelivr
+    f"https://testingcf.jsdelivr.net/gh/{GITHUB_OWNER}/{GITHUB_DL_REPO}",  # Testing Cloudflare JSDelivr
 ]
 
 GITHUB_API_URL = (
