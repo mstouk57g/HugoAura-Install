@@ -7,7 +7,7 @@ from pathlib import Path
 from logger.initLogger import log
 from config.config import (
     # GITHUB_API_URL,
-    BASE_DOWNLOAD_URL,
+    BASE_DOWNLOAD_URLS,
     ASAR_FILENAME,
     ZIP_FILENAME,
     TEMP_INSTALL_DIR,
@@ -80,6 +80,27 @@ def download_file(url: str, dest_folder: str, filename: str) -> Path | None:
         return None
 
 
+def download_file_multi_sources(filename: str, dest_folder: str) -> Path | None:
+    """
+    尝试从多个下载源下载文件，直到成功或所有源都失败。
+    """
+    from urllib.parse import urljoin
+    cur_timestamp = str(time.time()).replace(".", "")
+    for base_url in BASE_DOWNLOAD_URLS:
+        # 兼容 jsdelivr 及 github raw 路径
+        if "jsdelivr" in base_url:
+            url = f"{base_url}/{filename}?ts={cur_timestamp}"
+        else:
+            url = f"{base_url}/{filename}?ts={cur_timestamp}"
+        result = download_file(url, dest_folder, filename)
+        if result:
+            return result
+        else:
+            log.warning(f"从 {url} 下载失败，尝试下一个源...")
+    log.critical(f"所有下载源均失败，无法下载 {filename}")
+    return None
+
+
 def unzip_file(zip_path: Path, extract_to: Path) -> bool:
     log.info(f"正在解压 {zip_path.name}, 目标目录: {extract_to}")
     try:
@@ -116,16 +137,12 @@ def download_latest_release_files() -> tuple[Path | None, Path | None]:
         )
         return None, None
 
-    cur_timestamp = str(time.time()).replace(".", "")
-    asar_url = f"{BASE_DOWNLOAD_URL}@main/{ASAR_FILENAME}?ts={cur_timestamp}"
-    zip_url = f"{BASE_DOWNLOAD_URL}@main/{ZIP_FILENAME}?ts={cur_timestamp}"
-
-    downloaded_asar_path = download_file(asar_url, str(temp_dir), ASAR_FILENAME)
+    downloaded_asar_path = download_file_multi_sources(ASAR_FILENAME, str(temp_dir))
     if not downloaded_asar_path:
         log.critical("下载 app-patched.asar 时发生错误, 安装进程终止。")
         return None, None
 
-    downloaded_zip_path = download_file(zip_url, str(temp_dir), ZIP_FILENAME)
+    downloaded_zip_path = download_file_multi_sources(ZIP_FILENAME, str(temp_dir))
     if not downloaded_zip_path:
         log.critical("下载 aura.zip 时发生错误, 安装进程终止。")
         return downloaded_asar_path, None
