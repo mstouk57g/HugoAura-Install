@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 import time
+import requests
 from pathlib import Path
 from logger.initLogger import log
 from utils import dirSearch, fileDownloader, killer
@@ -9,7 +10,6 @@ from config import config
 
 
 def fetch_github_releases():
-    import requests
     url = config.GITHUB_API_URL
     try:
         resp = requests.get(url, timeout=30)
@@ -23,8 +23,9 @@ def fetch_github_releases():
 def select_release_tag():
     releases = fetch_github_releases()
     if not releases:
-        log.error("无法获取版本信息，您可以手动输入版本 Tag：")
-        return input("请输入版本 Tag：")
+        log.error("无法获取版本信息，您可以手动输入版本 Tag: ")
+        return input("请输入版本 Tag: ")
+
     # 分类发行版和预发行版
     stable = [r for r in releases if not r.get("prerelease", False)]
     pre = [r for r in releases if r.get("prerelease", False)]
@@ -46,14 +47,14 @@ def select_release_tag():
             options.append(tag)
     print(f"[{len(options)+1}] 手动输入版本 Tag")
     while True:
-        choice = input(f"请输入序号 [1-{len(options)+1}]：")
+        choice = input(f"请输入序号 [1-{len(options)+1}]: ")
         if choice.isdigit():
             idx = int(choice)
             if 1 <= idx <= len(options):
                 return options[idx-1]
             elif idx == len(options)+1:
-                return input("请输入版本 Tag：")
-        print("输入无效，请重新输入。")
+                return input("请输入版本 Tag: ")
+        print("输入无效, 请重新输入。")
 
 
 def run_installation():

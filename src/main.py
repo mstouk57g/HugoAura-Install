@@ -10,7 +10,7 @@ from config import config
 
 def main():
     log.info(f"--- 启动 {config.APP_NAME} 一键安装脚本 ---")
-    log.info(f"安装脚本版本: 0.0.1-alpha-patch2")
+    log.info(f"安装脚本版本: 0.0.1-beta")
     log.info(f"EXEC: {sys.executable}")
     log.info(f"Arg: {sys.argv}")
 
