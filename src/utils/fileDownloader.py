@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 from logger.initLogger import log
 from config.config import (
-    # GITHUB_API_URL,
     BASE_DOWNLOAD_URLS,
     ASAR_FILENAME,
     ZIP_FILENAME,
@@ -14,33 +13,7 @@ from config.config import (
 )
 
 
-"""
-def get_latest_release_tag() -> str | None:
-    log.info(
-        f"正在从 {GITHUB_API_URL} 获取 HugoAura 的最新 Release 版本信息, 请稍等..."
-    )
-    try:
-        response = requests.get(GITHUB_API_URL, timeout=30)
-        response.raise_for_status()
-        data = response.json()
-        tag_name = data.get("tag_name")
-        if tag_name:
-            log.success(f"获取成功, 最新版本 Tag: {tag_name}")
-            return tag_name
-        else:
-            log.error("获取失败, 未能在响应中找到 'tag_name' 信息, 请检查您的网络连接")
-            log.info(f"您可以尝试手动输入最新版本 Tag:")
-            userInputVersion = input()
-            return userInputVersion
-    except requests.exceptions.RequestException as e:
-        log.error(f"拉取版本信息时发生网络错误: {e}")
-        log.info(f"您可以尝试手动输入最新版本 Tag:")
-        userInputVersion = input()
-        return userInputVersion
-    except Exception as e:
-        log.error(f"拉取版本信息时发生未知错误: {e}")
-        return None
-"""
+desiredTag = None
 
 
 def download_file(url: str, dest_folder: str, filename: str) -> Path | None:
@@ -85,13 +58,11 @@ def download_file_multi_sources(filename: str, dest_folder: str) -> Path | None:
     尝试从多个下载源下载文件，直到成功或所有源都失败。
     """
 
+    global desiredTag
+
     cur_timestamp = str(time.time()).replace(".", "")
     for base_url in BASE_DOWNLOAD_URLS:
-        # 兼容 JSDelivr 及 GitHub Raw 路径
-        if "jsdelivr" in base_url:
-            url = f"{base_url}/{filename}?ts={cur_timestamp}"
-        else:
-            url = f"{base_url}/{filename}?ts={cur_timestamp}"
+        url = f"{base_url}/{desiredTag}/{filename}?ts={cur_timestamp}"
         result = download_file(url, dest_folder, filename)
         if result:
             return result
@@ -117,9 +88,11 @@ def unzip_file(zip_path: Path, extract_to: Path) -> bool:
         return False
 
 
-def download_latest_release_files() -> tuple[Path | None, Path | None]:
+def download_release_files(tagName) -> tuple[Path | None, Path | None]:
     log.info(f"准备下载 HugoAura 资源文件...")
 
+    global desiredTag
+    desiredTag = tagName
     temp_dir = Path(TEMP_INSTALL_DIR)
     if temp_dir.exists():
         log.info(f"正在清理旧的临时文件夹: {temp_dir}")

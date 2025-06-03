@@ -83,7 +83,7 @@ def run_installation():
 
         log.info("[3 / 9] 下载资源文件")
         downloaded_asar_path, downloaded_zip_path = (
-            fileDownloader.download_latest_release_files()
+            fileDownloader.download_release_files(selected_tag)
         )
         if not downloaded_asar_path or not downloaded_zip_path:
             log.critical("资源文件下载失败, 即将结束安装")

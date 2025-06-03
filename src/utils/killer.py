@@ -1,6 +1,5 @@
 import subprocess
 import threading
-import time
 from logger.initLogger import log
 from config.config import TARGET_PROCESS_NAME, PROCESS_KILL_INTERVAL_SECONDS
 
