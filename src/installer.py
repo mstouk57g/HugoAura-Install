@@ -23,8 +23,8 @@ def fetch_github_releases():
 def select_release_tag():
     releases = fetch_github_releases()
     if not releases:
-        log.error("无法获取版本信息，您可以手动输入版本 Tag: ")
-        return input("请输入版本 Tag: ")
+        log.error("无法获取版本信息，您可以手动输入版本 Tag 或本地文件路径: ")
+        return input("请输入版本 Tag 或本地文件路径: ")
 
     # 分类发行版和预发行版
     stable = [r for r in releases if not r.get("prerelease", False)]
@@ -79,12 +79,22 @@ def run_installation():
 
         log.info("[2 / 9] 选择 HugoAura 版本")
         selected_tag = select_release_tag()
-        log.info(f"已选择版本 Tag: {selected_tag}")
+        if os.path.exists(selected_tag):
+            log.info(f"已选择本地文件: {selected_tag}")
+        else:
+            log.info(f"已选择版本 Tag: {selected_tag}")
 
-        log.info("[3 / 9] 下载资源文件")
-        downloaded_asar_path, downloaded_zip_path = (
-            fileDownloader.download_release_files(selected_tag)
-        )
+        log.info("[3 / 9] 获取资源文件")
+        if os.path.exists(selected_tag):
+            downloaded_asar_path = Path(selected_tag)
+            downloaded_zip_path = Path(str(selected_tag).replace('.asar', '.zip'))
+            if not downloaded_zip_path.exists():
+                log.critical("未找到对应的文件，请确保本地路径同时包含.asar和.zip文件")
+                return False
+        else:
+            downloaded_asar_path, downloaded_zip_path = (
+                fileDownloader.download_release_files(selected_tag)
+            )
         if not downloaded_asar_path or not downloaded_zip_path:
             log.critical("资源文件下载失败, 即将结束安装")
             return False
