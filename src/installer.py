@@ -24,12 +24,12 @@ def fetch_github_releases():
 def select_release_source(args=None):
     """
     选择安装版本来源
-    
+
     参数:
         args: 命令行参数对象，如果提供则尝试使用非交互式方式选择
-        
+
     返回:
-        str: 版本标签或本地文件路径，如果在非交互模式下失败则返回None
+        str: 版本标签或本地文件路径, 如果在非交互模式下失败则返回None
     """
     # 如果指定了本地文件路径
     if args and args.path:
@@ -39,36 +39,36 @@ def select_release_source(args=None):
         else:
             log.error(f"指定的本地文件不存在: {args.path}")
             sys.exit(7)
-    
+
     # 如果指定了版本标签
     if args and args.version:
         log.info(f"使用指定的版本标签: {args.version}")
         return args.version
-    
+
     releases = fetch_github_releases()
     if not releases:
         log.error("无法获取版本信息")
         if args and args.yes:
-            log.critical("非交互模式下无法获取版本信息，安装终止")
+            log.critical("非交互模式下无法获取版本信息, 安装终止")
             sys.exit(4)  # 资源文件下载失败
         return input("请输入版本 Tag 或本地文件路径: ")
 
     # 分类发行版和预发行版
     stable = [r for r in releases if not r.get("prerelease", False)]
     pre = [r for r in releases if r.get("prerelease", False)]
-    
+
     # 如果指定了使用最新稳定版
     if args and args.latest and stable:
         latest_stable = stable[0].get("tag_name", "")
         log.info(f"使用最新稳定版: {latest_stable}")
         return latest_stable
-    
+
     # 如果指定了使用最新预发行版
     if args and args.pre and pre:
         latest_pre = pre[0].get("tag_name", "")
         log.info(f"使用最新预发行版: {latest_pre}")
         return latest_pre
-    
+
     # 非交互模式下的默认行为
     if args and args.yes:
         if stable:
@@ -77,15 +77,15 @@ def select_release_source(args=None):
             return latest_stable
         elif pre:
             latest_pre = pre[0].get("tag_name", "")
-            log.info(f"非交互模式下使用最新预发行版(无稳定版): {latest_pre}")
+            log.info(f"非交互模式下使用最新预发行版 (无稳定版): {latest_pre}")
             return latest_pre
         else:
-            log.critical("非交互模式下无法选择版本，安装终止")
+            log.critical("非交互模式下无法选择版本, 安装终止")
             sys.exit(7)  # 参数错误
-    
+
     # 交互式选择
     options = []
-    print("请选择要安装的版本：")
+    print("请选择要安装的版本: ")
     if stable:
         print("--- 发行版 ---")
         for rel in stable:
@@ -101,14 +101,14 @@ def select_release_source(args=None):
             print(f"[{len(options)+1}] {tag} (预发行版) {name}")
             options.append(tag)
     print(f"[{len(options)+1}] 手动输入版本 Tag")
-    
+
     while True:
         choice = input(f"请输入序号 [1-{len(options)+1}]: ")
         if choice.isdigit():
             idx = int(choice)
             if 1 <= idx <= len(options):
-                return options[idx-1]
-            elif idx == len(options)+1:
+                return options[idx - 1]
+            elif idx == len(options) + 1:
                 return input("请输入版本 Tag: ")
         print("输入无效, 请重新输入。")
 
@@ -116,10 +116,10 @@ def select_release_source(args=None):
 def run_installation(args=None):
     """
     运行安装流程
-    
+
     参数:
         args: 命令行参数对象，如果提供则尝试使用非交互式方式安装
-        
+
     返回:
         bool: 安装是否成功
     """
@@ -130,8 +130,8 @@ def run_installation(args=None):
     download_source = None
 
     try:
-        log.info("[0 / 9] 准备安装")
-        log.info(f"即将开始运行 {config.APP_NAME} 的管理工具")
+        log.info("[0 / 9] 准备")
+        log.info(f"即将开始运行 {config.APP_NAME} 管理工具")
 
         log.info("[1 / 9] 查找希沃管家安装目录")
         # 如果指定了安装目录
@@ -146,7 +146,7 @@ def run_installation(args=None):
             if not install_dir_path_str:
                 log.critical("未能找到 SeewoServiceAssistant 安装目录")
                 if args and args.yes:
-                    log.critical("非交互模式下无法手动输入安装目录，安装终止")
+                    log.critical("非交互模式下无法手动输入安装目录, 安装终止")
                     sys.exit(3)  # 未找到希沃管家安装目录
                 log.info("您可以尝试手动输入安装目录:")
                 install_dir_path_str = input()
@@ -167,9 +167,13 @@ def run_installation(args=None):
         if not str.startswith(download_source, "v"):
             if os.path.exists(download_source):
                 downloaded_asar_path = Path(download_source)
-                downloaded_zip_path = Path(str(download_source).replace('.asar', '.zip'))
+                downloaded_zip_path = Path(
+                    str(download_source).replace(".asar", ".zip")
+                )
                 if not downloaded_zip_path.exists():
-                    log.critical("未找到对应的文件，请确保本地路径同时包含 .asar 和 .zip 文件")
+                    log.critical(
+                        "未找到对应的文件，请确保本地路径同时包含 .asar 和 .zip 文件"
+                    )
                     return False
             else:
                 log.critical("请输入合法的路径")

@@ -60,9 +60,8 @@ def download_file_multi_sources(filename: str, dest_folder: str) -> Path | None:
 
     global desiredTag
 
-    cur_timestamp = str(time.time()).replace(".", "")
     for base_url in BASE_DOWNLOAD_URLS:
-        url = f"{base_url}/{desiredTag}/{filename}?ts={cur_timestamp}"
+        url = f"{base_url}/{desiredTag}/{filename}"
         result = download_file(url, dest_folder, filename)
         if result:
             return result

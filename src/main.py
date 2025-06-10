@@ -11,23 +11,35 @@ from config import config
 def parse_arguments():
     """
     解析命令行参数
-    
+
     返回:
         argparse.Namespace: 解析后的参数对象
     """
     parser = argparse.ArgumentParser(description=f"{config.APP_NAME} 管理工具")
-    
-    # 版本选择参数组（互斥）
+
+    # 版本选择参数组 (互斥)
     version_group = parser.add_mutually_exclusive_group()
-    version_group.add_argument("-v", "--version", help="指定要安装的版本标签，例如 v1.0.0", type=str)
-    version_group.add_argument("-p", "--path", help="指定本地安装文件路径（.asar 文件）", type=str)
-    version_group.add_argument("-l", "--latest", help="安装最新的稳定版本（默认）", action="store_true")
-    version_group.add_argument("--pre", help="安装最新的预发行版本", action="store_true")
-    
+    version_group.add_argument(
+        "-v", "--version", help="指定要安装的版本标签，例如 v1.0.0", type=str
+    )
+    version_group.add_argument(
+        "-p", "--path", help="指定本地安装文件路径 (.asar 文件)", type=str
+    )
+    version_group.add_argument(
+        "-l", "--latest", help="安装最新的稳定版本 (默认)", action="store_true"
+    )
+    version_group.add_argument(
+        "--pre", help="安装最新的预发行版本", action="store_true"
+    )
+
     parser.add_argument("-d", "--dir", help="指定希沃管家安装目录", type=str)
-    parser.add_argument("-y", "--yes", help="非交互模式，自动确认所有操作", action="store_true")
-    parser.add_argument("--list-exit-codes", help="显示所有退出代码及其释义", action="store_true")
-    
+    parser.add_argument(
+        "-y", "--yes", help="非交互模式，自动确认所有操作", action="store_true"
+    )
+    parser.add_argument(
+        "--list-exit-codes", help="显示所有退出代码及其释义", action="store_true"
+    )
+
     return parser.parse_args()
 
 
@@ -45,13 +57,13 @@ def main():
     主函数，处理命令行参数并执行提权安装流程
     """
     args = parse_arguments()
-    
+
     if args.list_exit_codes:
         print_exit_codes()
         sys.exit(0)
-    
+
     log.info(f"--- 启动 {config.APP_NAME} 管理工具 ---")
-    log.info(f"管理工具版本: 0.0.1-beta-patch1")
+    log.info(f"管理工具版本: 0.0.2-early-alpha")
     log.info(f"EXEC: {sys.executable}")
     log.info(f"Arg: {sys.argv}")
 

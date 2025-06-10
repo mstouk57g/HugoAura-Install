@@ -21,7 +21,7 @@ def is_admin() -> bool:
 
 def run_as_admin():
     if sys.platform != "win32":
-        log.error("此管理工具仅适用于 Windows 平台")
+        log.error("HugoAura 目前仅支持 Windows 平台")
         sys.exit(1)
 
     try:
