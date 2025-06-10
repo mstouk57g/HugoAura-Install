@@ -20,7 +20,7 @@ def fetch_github_releases():
         return None
 
 
-def select_release_tag():
+def select_release_source():
     releases = fetch_github_releases()
     if not releases:
         log.error("无法获取版本信息，您可以手动输入版本 Tag 或本地文件路径: ")
@@ -62,7 +62,7 @@ def run_installation():
     install_dir_path = None
     downloaded_asar_path = None
     downloaded_zip_path = None
-    selected_tag = None
+    download_source = None
 
     try:
         log.info("[0 / 9] 准备安装")
@@ -78,22 +78,26 @@ def run_installation():
         install_dir_path = Path(install_dir_path_str)
 
         log.info("[2 / 9] 选择 HugoAura 版本")
-        selected_tag = select_release_tag()
-        if os.path.exists(selected_tag):
-            log.info(f"已选择本地文件: {selected_tag}")
+        download_source = select_release_source()
+        if os.path.exists(download_source):
+            log.info(f"已选择本地文件: {download_source}")
         else:
-            log.info(f"已选择版本 Tag: {selected_tag}")
+            log.info(f"已选择版本 Tag: {download_source}")
 
         log.info("[3 / 9] 获取资源文件")
-        if os.path.exists(selected_tag):
-            downloaded_asar_path = Path(selected_tag)
-            downloaded_zip_path = Path(str(selected_tag).replace('.asar', '.zip'))
-            if not downloaded_zip_path.exists():
-                log.critical("未找到对应的文件，请确保本地路径同时包含.asar和.zip文件")
+        if not str.startswith(download_source, "v"):
+            if os.path.exists(download_source):
+                downloaded_asar_path = Path(download_source)
+                downloaded_zip_path = Path(str(download_source).replace('.asar', '.zip'))
+                if not downloaded_zip_path.exists():
+                    log.critical("未找到对应的文件，请确保本地路径同时包含 .asar 和 .zip 文件")
+                    return False
+            else:
+                log.critical("请输入合法的路径")
                 return False
         else:
             downloaded_asar_path, downloaded_zip_path = (
-                fileDownloader.download_release_files(selected_tag)
+                fileDownloader.download_release_files(download_source)
             )
         if not downloaded_asar_path or not downloaded_zip_path:
             log.critical("资源文件下载失败, 即将结束安装")
