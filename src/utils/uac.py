@@ -21,7 +21,7 @@ def is_admin() -> bool:
 
 def run_as_admin():
     if sys.platform != "win32":
-        log.error("此一键安装脚本仅适用于 Windows 平台")
+        log.error("此管理工具仅适用于 Windows 平台")
         sys.exit(1)
 
     try:
@@ -42,7 +42,7 @@ def run_as_admin():
             log.error(
                 f"提权失败。ShellExecuteW returned: {ret} | Error code: {ctypes.get_last_error()}"
             )
-            log.error("请尝试手动以管理员权限运行此安装脚本。")
+            log.error("请尝试手动以管理员权限运行此管理工具。")
             return False
         else:
             log.info("提权成功, 即将退出旧进程...")
@@ -50,10 +50,10 @@ def run_as_admin():
             sys.exit(0)
 
     except FileNotFoundError:
-        log.error(f"提权失败, 安装脚本可执行文件定位失败: {script}")
-        log.error("请尝试手动以管理员权限运行此安装脚本。")
+        log.error(f"提权失败, 管理工具可执行文件定位失败: {script}")
+        log.error("请尝试手动以管理员权限运行此管理工具。")
         return False
     except Exception as e:
         log.exception(f"提权时发生未知异常: {e}")
-        log.error("请尝试手动以管理员权限运行此安装脚本。")
+        log.error("请尝试手动以管理员权限运行此管理工具。")
         return False

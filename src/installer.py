@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 import time
+import sys
 import requests
 from pathlib import Path
 from logger.initLogger import log
@@ -20,15 +21,69 @@ def fetch_github_releases():
         return None
 
 
-def select_release_source():
+def select_release_source(args=None):
+    """
+    选择安装版本来源
+    
+    参数:
+        args: 命令行参数对象，如果提供则尝试使用非交互式方式选择
+        
+    返回:
+        str: 版本标签或本地文件路径，如果在非交互模式下失败则返回None
+    """
+    # 如果指定了本地文件路径
+    if args and args.path:
+        if os.path.exists(args.path):
+            log.info(f"使用指定的本地文件: {args.path}")
+            return args.path
+        else:
+            log.error(f"指定的本地文件不存在: {args.path}")
+            sys.exit(7)
+    
+    # 如果指定了版本标签
+    if args and args.version:
+        log.info(f"使用指定的版本标签: {args.version}")
+        return args.version
+    
     releases = fetch_github_releases()
     if not releases:
-        log.error("无法获取版本信息，您可以手动输入版本 Tag 或本地文件路径: ")
+        log.error("无法获取版本信息")
+        if args and args.yes:
+            log.critical("非交互模式下无法获取版本信息，安装终止")
+            sys.exit(4)  # 资源文件下载失败
         return input("请输入版本 Tag 或本地文件路径: ")
 
     # 分类发行版和预发行版
     stable = [r for r in releases if not r.get("prerelease", False)]
     pre = [r for r in releases if r.get("prerelease", False)]
+    
+    # 如果指定了使用最新稳定版
+    if args and args.latest and stable:
+        latest_stable = stable[0].get("tag_name", "")
+        log.info(f"使用最新稳定版: {latest_stable}")
+        return latest_stable
+    
+    # 如果指定了使用最新预发行版
+    if args and args.pre and pre:
+        latest_pre = pre[0].get("tag_name", "")
+        log.info(f"使用最新预发行版: {latest_pre}")
+        return latest_pre
+    
+    # 非交互模式下的默认行为
+    if args and args.yes:
+        if stable:
+            latest_stable = stable[0].get("tag_name", "")
+            log.info(f"非交互模式下默认使用最新稳定版: {latest_stable}")
+            return latest_stable
+        elif pre:
+            latest_pre = pre[0].get("tag_name", "")
+            log.info(f"非交互模式下使用最新预发行版(无稳定版): {latest_pre}")
+            return latest_pre
+        else:
+            log.critical("非交互模式下无法选择版本，安装终止")
+            sys.exit(7)  # 参数错误
+    
+    # 交互式选择
     options = []
     print("请选择要安装的版本：")
     if stable:
@@ -46,6 +101,7 @@ def select_release_source():
             print(f"[{len(options)+1}] {tag} (预发行版) {name}")
             options.append(tag)
     print(f"[{len(options)+1}] 手动输入版本 Tag")
+    
     while True:
         choice = input(f"请输入序号 [1-{len(options)+1}]: ")
         if choice.isdigit():
@@ -57,7 +113,16 @@ def select_release_source():
         print("输入无效, 请重新输入。")
 
 
-def run_installation():
+def run_installation(args=None):
+    """
+    运行安装流程
+    
+    参数:
+        args: 命令行参数对象，如果提供则尝试使用非交互式方式安装
+        
+    返回:
+        bool: 安装是否成功
+    """
     install_success = False
     install_dir_path = None
     downloaded_asar_path = None
@@ -66,19 +131,33 @@ def run_installation():
 
     try:
         log.info("[0 / 9] 准备安装")
-        log.info(f"即将开始运行 {config.APP_NAME} 的一键安装脚本")
+        log.info(f"即将开始运行 {config.APP_NAME} 的管理工具")
 
         log.info("[1 / 9] 查找希沃管家安装目录")
-        install_dir_path_str = dirSearch.find_seewo_resources_dir()
-        if not install_dir_path_str:
-            log.critical("未能找到 SeewoServiceAssistant 安装目录")
-            log.info("您可以尝试手动输入安装目录:")
-            install_dir_path_str = input()
+        # 如果指定了安装目录
+        if args and args.dir:
+            install_dir_path_str = args.dir
+            if not os.path.isdir(install_dir_path_str):
+                log.critical(f"指定的安装目录不存在: {install_dir_path_str}")
+                return False
+            log.info(f"使用指定的安装目录: {install_dir_path_str}")
+        else:
+            install_dir_path_str = dirSearch.find_seewo_resources_dir()
+            if not install_dir_path_str:
+                log.critical("未能找到 SeewoServiceAssistant 安装目录")
+                if args and args.yes:
+                    log.critical("非交互模式下无法手动输入安装目录，安装终止")
+                    sys.exit(3)  # 未找到希沃管家安装目录
+                log.info("您可以尝试手动输入安装目录:")
+                install_dir_path_str = input()
+                if not os.path.isdir(install_dir_path_str):
+                    log.critical(f"指定的目录不存在: {install_dir_path_str}")
+                    return False
 
         install_dir_path = Path(install_dir_path_str)
 
         log.info("[2 / 9] 选择 HugoAura 版本")
-        download_source = select_release_source()
+        download_source = select_release_source(args)
         if os.path.exists(download_source):
             log.info(f"已选择本地文件: {download_source}")
         else:

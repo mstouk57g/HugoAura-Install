@@ -23,7 +23,7 @@ def _kill_loop():
             )
             if result.returncode != 0 and "没有找到进程" not in result.stderr.lower():
                 log.warning(
-                    f"进程结束失败: {result.stderr.strip()} (Code: {result.returncode}) 请检查一键安装脚本的权限状态"
+                    f"进程结束失败: {result.stderr.strip()} (Code: {result.returncode}) 请检查管理工具的权限状态"
                 )
             else:
                 log.debug(
