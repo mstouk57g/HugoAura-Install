@@ -26,7 +26,7 @@ def parse_arguments():
         "-p", "--path", help="指定本地安装文件路径 (.asar 文件)", type=str
     )
     version_group.add_argument(
-        "-l", "--latest", help="安装最新的稳定版本 (默认)", action="store_true"
+        "-l", "--latest", help="安装最新的稳定版本", action="store_true"
     )
     version_group.add_argument(
         "--pre", help="安装最新的预发行版本", action="store_true"
@@ -67,8 +67,10 @@ def main():
     log.info(f"EXEC: {sys.executable}")
     log.info(f"Arg: {sys.argv}")
 
-    # 默认使用最新稳定版
-    if not (args.version or args.path or args.pre):
+    has_version_args = args.version or args.path or args.pre or args.latest
+    is_double_click = len(sys.argv) == 1
+    
+    if not has_version_args and not is_double_click:
         args.latest = True
 
     if not uac.is_admin():
