@@ -35,6 +35,10 @@ SWASS_PATH_PATTERN = r"C:\Program Files (x86)\Seewo\SeewoService\SeewoService_*\
 TEMP_DIR_NAME = "Aura-Install-Temp"
 TEMP_INSTALL_DIR = os.path.join(tempfile.gettempdir(), TEMP_DIR_NAME)
 
+# HugoAura 数据路径
+HUGOAURA_USER_DATA_DIR = os.path.join(os.path.expanduser("~"), "Documents", "HugoAura")
+HUGOAURA_REGISTRY_KEY = r"SOFTWARE\HugoAura"
+
 # 进程杀死间隔
 PROCESS_KILL_INTERVAL_SECONDS = 0.5
 

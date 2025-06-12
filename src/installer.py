@@ -130,10 +130,10 @@ def run_installation(args=None):
     download_source = None
 
     try:
-        log.info("[0 / 9] 准备")
+        log.info("[0 / 10] 准备")
         log.info(f"即将开始运行 {config.APP_NAME} 管理工具")
 
-        log.info("[1 / 9] 查找希沃管家安装目录")
+        log.info("[1 / 10] 查找希沃管家安装目录")
         # 如果指定了安装目录
         if args and args.dir:
             install_dir_path_str = args.dir
@@ -156,14 +156,14 @@ def run_installation(args=None):
 
         install_dir_path = Path(install_dir_path_str)
 
-        log.info("[2 / 9] 选择 HugoAura 版本")
+        log.info("[2 / 10] 选择 HugoAura 版本")
         download_source = select_release_source(args)
         if os.path.exists(download_source):
             log.info(f"已选择本地文件: {download_source}")
         else:
             log.info(f"已选择版本 Tag: {download_source}")
 
-        log.info("[3 / 9] 获取资源文件")
+        log.info("[3 / 10] 获取资源文件")
         if not str.startswith(download_source, "v"):
             if os.path.exists(download_source):
                 downloaded_asar_path = Path(download_source)
@@ -186,7 +186,7 @@ def run_installation(args=None):
             log.critical("资源文件下载失败, 即将结束安装")
             return False
 
-        log.info("[4 / 9] 解压资源文件")
+        log.info("[4 / 10] 解压资源文件")
         temp_extract_path = Path(config.TEMP_INSTALL_DIR + "\\aura")
         if not fileDownloader.unzip_file(downloaded_zip_path, temp_extract_path):
             log.critical("资源文件解压失败, 即将结束安装")
@@ -209,7 +209,7 @@ def run_installation(args=None):
                 log.critical("Aura.zip 结构解析失败, 即将结束安装")
                 return False
 
-        log.info("[5 / 9] 卸载文件系统过滤驱动")
+        log.info("[5 / 10] 卸载文件系统过滤驱动")
         try:
             creationflags = subprocess.CREATE_NO_WINDOW
             command = ["fltmc", "unload", "SeewoKeLiteLady"]
@@ -230,7 +230,7 @@ def run_installation(args=None):
         except Exception as e:
             log.error(f"调用 fltmc 时发生未知错误: {e}")
 
-        log.info("[6 / 9] 移动 Aura 文件夹")
+        log.info("[6 / 10] 移动 Aura 文件夹")
         target_aura_path = install_dir_path / config.EXTRACTED_FOLDER_NAME
         log.info(
             f"即将将 '{config.EXTRACTED_FOLDER_NAME}' 移动至 {target_aura_path}..."
@@ -248,11 +248,11 @@ def run_installation(args=None):
             log.critical(f"移动文件夹 '{config.EXTRACTED_FOLDER_NAME}' 时发生错误: {e}")
             return False
 
-        log.info("[7 / 9] 启动结束进程后台任务")
+        log.info("[7 / 10] 启动结束进程后台任务")
         killer.start_killing_process()
         time.sleep(2.0)
 
-        log.info("[8 / 9] 替换 ASAR 包")
+        log.info("[8 / 10] 替换 ASAR 包")
         original_asar_path = install_dir_path / config.TARGET_ASAR_NAME
         temp_asar_path = downloaded_asar_path
 
@@ -293,11 +293,21 @@ def run_installation(args=None):
             )
             install_success = False
 
+        log.info("[9 / 10] 写入版本信息和安装时间到注册表")
+        # 写入版本信息和安装时间到注册表
+        try:
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, config.HUGOAURA_REGISTRY_KEY) as key:
+                winreg.SetValueEx(key, "Version", 0, winreg.REG_SZ, download_source if isinstance(download_source, str) else "local")
+                winreg.SetValueEx(key, "InstallTime", 0, winreg.REG_SZ, datetime.now().isoformat())
+            log.info("版本信息和安装时间已写入注册表")
+        except Exception as e:
+           log.warning(f"写入注册表失败: {e}")
+
     except Exception as e:
         log.exception(f"安装过程中发生未知错误: {e}")
         install_success = False
     finally:
-        log.info("[9 / 9] 清理工作")
+        log.info("[10 / 10] 清理工作")
         killer.stop_killing_process()
 
         temp_dir = Path(config.TEMP_INSTALL_DIR)
