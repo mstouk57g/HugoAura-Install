@@ -1,0 +1,34 @@
+name: Build Aura Installer
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    
+    - name: Install Poetry
+      run: pip install poetry
+    
+    - name: Install dependencies
+      run: poetry install
+    
+    - name: Build executable
+      run: poetry run pyinstaller --noconfirm --onefile --console --name AuraInstaller src/main.py
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: AuraInstaller
+        path: dist/AuraInstaller.exe
