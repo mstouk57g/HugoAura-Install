@@ -27,7 +27,7 @@ def run_as_admin():
     try:
         log.info("尝试使用管理员权限重启...")
         script = os.path.abspath(sys.executable)
-        params = " ".join([f'"{arg}"' for arg in sys.argv])
+        params = " ".join([f'"{arg}"' for arg in sys.argv[1:-1]])
 
         ret = ctypes.windll.shell32.ShellExecuteW(
             None,
