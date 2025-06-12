@@ -168,11 +168,11 @@ def run_installation(args=None):
             if os.path.exists(download_source):
                 downloaded_asar_path = Path(download_source)
                 downloaded_zip_path = Path(
-                    str(download_source).replace(".asar", ".zip")
+                    str(download_source).replace("app-patched.asar", "aura.zip")
                 )
                 if not downloaded_zip_path.exists():
                     log.critical(
-                        "未找到对应的文件，请确保本地路径同时包含 .asar 和 .zip 文件"
+                        "未找到对应的文件，请确保本地路径同时包含 app-patched.asar 和 aura.zip 文件"
                     )
                     return False
             else:
