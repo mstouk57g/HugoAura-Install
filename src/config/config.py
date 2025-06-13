@@ -39,6 +39,14 @@ TEMP_INSTALL_DIR = os.path.join(tempfile.gettempdir(), TEMP_DIR_NAME)
 HUGOAURA_USER_DATA_DIR = os.path.join(os.path.expanduser("~"), "Documents", "HugoAura")
 HUGOAURA_REGISTRY_KEY = r"SOFTWARE\HugoAura"
 
+# 备份目录信息
+BACKUP_DIR_NAME = "HugoAura-Backup"
+BACKUP_BASE_DIR = os.path.join(os.path.expanduser("~"), "Documents", "HugoAura-Install-Backup")
+
+# 备份配置
+MAX_BACKUPS = 10  # 最大备份数量
+BACKUP_ARCHIVE_NAME = "backup.zip"  # 备份压缩包名称
+
 # 进程杀死间隔
 PROCESS_KILL_INTERVAL_SECONDS = 0.5
 
