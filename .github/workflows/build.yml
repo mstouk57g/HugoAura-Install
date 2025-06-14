@@ -1,4 +1,4 @@
-name: Build Aura Installer
+name: Build Aura Installer (Poetry)
 
 on:
   push:
