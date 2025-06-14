@@ -29,7 +29,7 @@ BASE_DOWNLOAD_URLS = [
 GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/releases"
 
 # 目标路径模式
-SWASS_PATH_PATTERN = r"C:\Program Files (x86)\Seewo\SeewoService\SeewoService_*\SeewoServiceAssistant\resources"
+SWASS_PATH_PATTERN = r"C:\\Program Files (x86)\\Seewo\\SeewoService\\SeewoService_*\\SeewoServiceAssistant\\resources"
 
 # 临时目录信息
 TEMP_DIR_NAME = "Aura-Install-Temp"
@@ -37,7 +37,7 @@ TEMP_INSTALL_DIR = os.path.join(tempfile.gettempdir(), TEMP_DIR_NAME)
 
 # HugoAura 数据路径
 HUGOAURA_USER_DATA_DIR = os.path.join(os.path.expanduser("~"), "Documents", "HugoAura")
-HUGOAURA_REGISTRY_KEY = r"SOFTWARE\HugoAura"
+HUGOAURA_REGISTRY_KEY = r"SOFTWARE\\HugoAura"
 
 # 进程杀死间隔
 PROCESS_KILL_INTERVAL_SECONDS = 0.5

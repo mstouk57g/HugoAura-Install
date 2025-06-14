@@ -31,10 +31,16 @@ def parse_arguments():
     version_group.add_argument(
         "--pre", help="安装最新的预发行版本", action="store_true"
     )
+    version_group.add_argument(
+        "--ci", help="安装最新的 CI 版本", action="store_true"
+    )
 
     parser.add_argument("-d", "--dir", help="指定希沃管家安装目录", type=str)
     parser.add_argument(
-        "-y", "--yes", help="非交互模式，自动确认所有操作", action="store_true"
+        "-y", "--yes", help="非交互模式, 自动确认所有操作", action="store_true"
+    )
+    parser.add_argument(
+        "--dry-run", help="不进行实际安装操作, 仅执行下载流程", action="store_true"
     )
     parser.add_argument(
         "--list-exit-codes", help="显示所有退出代码及其释义", action="store_true"
@@ -63,14 +69,14 @@ def main():
         sys.exit(0)
 
     log.info(f"--- 启动 {config.APP_NAME} 管理工具 ---")
-    log.info(f"管理工具版本: 0.0.2-early-alpha")
+    log.info(f"管理工具版本: 0.0.2-alpha")
     log.info(f"EXEC: {sys.executable}")
     log.info(f"Arg: {sys.argv}")
 
     has_version_args = args.version or args.path or args.pre or args.latest
     is_double_click = len(sys.argv) == 1
     
-    if not has_version_args and not is_double_click:
+    if not has_version_args and not is_double_click and not args.dry_run:
         args.latest = True
 
     if not uac.is_admin():

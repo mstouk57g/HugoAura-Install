@@ -1,8 +1,10 @@
+from datetime import datetime
 import os
 import shutil
 import subprocess
 import time
 import sys
+import winreg
 import requests
 from pathlib import Path
 from logger.initLogger import log
@@ -55,7 +57,12 @@ def select_release_source(args=None):
 
     # 分类发行版和预发行版
     stable = [r for r in releases if not r.get("prerelease", False)]
-    pre = [r for r in releases if r.get("prerelease", False)]
+    pre = [
+        r
+        for r in releases
+        if r.get("prerelease", False) and not str.startswith(r["name"], "[CI")
+    ]
+    ci = [r for r in releases if str.startswith(r["name"], "[CI")]
 
     # 如果指定了使用最新稳定版
     if args and args.latest and stable:
@@ -69,18 +76,23 @@ def select_release_source(args=None):
         log.info(f"使用最新预发行版: {latest_pre}")
         return latest_pre
 
+    if args and args.ci and ci:
+        latest_ci = ci[0].get("tag_name", "")
+        log.info(f"使用最新 CI 构建: {latest_ci}")
+        return latest_ci
+
     # 非交互模式下的默认行为
     if args and args.yes:
         if stable:
             latest_stable = stable[0].get("tag_name", "")
-            log.info(f"非交互模式下默认使用最新稳定版: {latest_stable}")
+            log.info(f"默认使用最新稳定版: {latest_stable}")
             return latest_stable
         elif pre:
             latest_pre = pre[0].get("tag_name", "")
-            log.info(f"非交互模式下使用最新预发行版 (无稳定版): {latest_pre}")
+            log.info(f"未找到稳定版, 默认使用最新预发行版: {latest_pre}")
             return latest_pre
         else:
-            log.critical("非交互模式下无法选择版本, 安装终止")
+            log.critical("未找到有效版本, 安装终止")
             sys.exit(7)  # 参数错误
 
     # 交互式选择
@@ -91,15 +103,22 @@ def select_release_source(args=None):
         for rel in stable:
             tag = rel.get("tag_name", "")
             name = rel.get("name", tag)
-            print(f"[{len(options)+1}] {tag} (发行版) {name}")
+            print(f"[{len(options)+1}] {tag} {name}")
             options.append(tag)
     if pre:
         print("--- 预发行版 ---")
         for rel in pre:
             tag = rel.get("tag_name", "")
             name = rel.get("name", tag)
-            print(f"[{len(options)+1}] {tag} (预发行版) {name}")
+            print(f"[{len(options)+1}] {tag} {name}")
             options.append(tag)
+    if ci:
+        latest_ci = ci[0]
+        print("--- 自动构建版 ---")
+        print(f"[{len(options)+1}] {latest_ci["tag_name"]} {latest_ci["name"]}")
+        options.append(latest_ci["tag_name"])
+
+    print("--- 或选择手动输入 ---")
     print(f"[{len(options)+1}] 手动输入版本 Tag")
 
     while True:
@@ -211,20 +230,21 @@ def run_installation(args=None):
 
         log.info("[5 / 10] 卸载文件系统过滤驱动")
         try:
-            creationflags = subprocess.CREATE_NO_WINDOW
-            command = ["fltmc", "unload", "SeewoKeLiteLady"]
-            result = subprocess.run(
-                command,
-                capture_output=True,
-                text=True,
-                check=False,
-                creationflags=creationflags,
-            )
-            log.info(f"卸载命令执行成功, 返回值: {result.returncode}")
-            if result.stdout:
-                log.debug(f"fltmc stdout: {result.stdout.strip()}")
-            if result.stderr:
-                log.warning(f"fltmc stderr: {result.stderr.strip()}")
+            if not args.dry_run:
+                creationflags = subprocess.CREATE_NO_WINDOW
+                command = ["fltmc", "unload", "SeewoKeLiteLady"]
+                result = subprocess.run(
+                    command,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    creationflags=creationflags,
+                )
+                log.info(f"卸载命令执行成功, 返回值: {result.returncode}")
+                if result.stdout:
+                    log.debug(f"fltmc stdout: {result.stdout.strip()}")
+                if result.stderr:
+                    log.warning(f"fltmc stderr: {result.stderr.strip()}")
         except FileNotFoundError:
             log.error('未能找到 "fltmc" 命令, 请确保您的系统环境完整。')
         except Exception as e:
@@ -240,17 +260,20 @@ def run_installation(args=None):
                 log.warning(
                     f"发现旧版本 HugoAura 目录: {target_aura_path}, 即将清理..."
                 )
-                shutil.rmtree(target_aura_path)
-                time.sleep(0.1)
-            shutil.move(str(expected_aura_source_path), str(target_aura_path))
+                if not args.dry_run:
+                    shutil.rmtree(target_aura_path)
+                    time.sleep(0.1)
+            if not args.dry_run:
+                shutil.move(str(expected_aura_source_path), str(target_aura_path))
             log.success(f"成功移动文件夹 '{config.EXTRACTED_FOLDER_NAME}'")
         except Exception as e:
             log.critical(f"移动文件夹 '{config.EXTRACTED_FOLDER_NAME}' 时发生错误: {e}")
             return False
 
         log.info("[7 / 10] 启动结束进程后台任务")
-        killer.start_killing_process()
-        time.sleep(2.0)
+        if not args.dry_run:
+            killer.start_killing_process()
+            time.sleep(2.0)
 
         log.info("[8 / 10] 替换 ASAR 包")
         original_asar_path = install_dir_path / config.TARGET_ASAR_NAME
@@ -262,7 +285,8 @@ def run_installation(args=None):
             if original_asar_path.exists():
                 log.info(f"尝试删除旧的 {original_asar_path}...")
                 try:
-                    os.remove(original_asar_path)
+                    if not args.dry_run:
+                        os.remove(original_asar_path)
                     log.success(f"旧的 {config.TARGET_ASAR_NAME} 删除成功。")
                     time.sleep(0.2)
                 except OSError as e:
@@ -279,7 +303,8 @@ def run_installation(args=None):
 
         try:
             log.info(f"正在将 {temp_asar_path} 移到 {original_asar_path}...")
-            shutil.move(str(temp_asar_path), str(original_asar_path))
+            if not args.dry_run:
+                shutil.move(str(temp_asar_path), str(original_asar_path))
             if original_asar_path.exists():
                 log.success(f"替换 {config.TARGET_ASAR_NAME} 成功。")
                 install_success = True
@@ -296,27 +321,48 @@ def run_installation(args=None):
         log.info("[9 / 10] 写入版本信息和安装时间到注册表")
         # 写入版本信息和安装时间到注册表
         try:
-            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, config.HUGOAURA_REGISTRY_KEY) as key:
-                winreg.SetValueEx(key, "Version", 0, winreg.REG_SZ, download_source if isinstance(download_source, str) else "local")
-                winreg.SetValueEx(key, "InstallTime", 0, winreg.REG_SZ, datetime.now().isoformat())
+            if not args.dry_run:
+                with winreg.CreateKey(
+                    winreg.HKEY_CURRENT_USER, config.HUGOAURA_REGISTRY_KEY
+                ) as key:
+                    winreg.SetValueEx(
+                        key,
+                        "Version",
+                        0,
+                        winreg.REG_SZ,
+                        (
+                            download_source
+                            if isinstance(download_source, str)
+                            else "local"
+                        ),
+                    )
+                    winreg.SetValueEx(
+                        key, "InstallTime", 0, winreg.REG_SZ, datetime.now().isoformat()
+                    )
             log.info("版本信息和安装时间已写入注册表")
         except Exception as e:
-           log.warning(f"写入注册表失败: {e}")
+            log.warning(f"写入注册表失败: {e}")
 
     except Exception as e:
         log.exception(f"安装过程中发生未知错误: {e}")
         install_success = False
     finally:
         log.info("[10 / 10] 清理工作")
-        killer.stop_killing_process()
+
+        if not args.dry_run:
+            killer.stop_killing_process()
 
         temp_dir = Path(config.TEMP_INSTALL_DIR)
         if temp_dir.exists():
             try:
-                shutil.rmtree(temp_dir)
+                if not args.dry_run:
+                    shutil.rmtree(temp_dir)
+                else:
+                    log.info(f"临时文件夹目录: {temp_dir}")
+                    log.info("可前往该目录检查 Dry Run 下载 / 解压产物")
             except OSError as e:
                 log.warning(f"临时文件夹清理失败: {e}")
-                log.warning("请尝试手动清理。")
+                log.warning("请尝试手动清理")
 
         if install_success:
             log.success("-----------------------------------------")
