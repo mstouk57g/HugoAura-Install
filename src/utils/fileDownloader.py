@@ -4,6 +4,7 @@ import zipfile
 import shutil
 import os
 from pathlib import Path
+from typing import Optional, Tuple
 from logger.initLogger import log
 from config.config import (
     BASE_DOWNLOAD_URLS,
@@ -16,7 +17,7 @@ from config.config import (
 desiredTag = None
 
 
-def download_file(url: str, dest_folder: str, filename: str) -> Path | None:
+def download_file(url: str, dest_folder: str, filename: str) -> Optional[Path]:
     dest_path = Path(dest_folder) / filename
     log.info(f"正在从 {url} 下载 {filename}, 目标目录: {dest_path}")
 
@@ -53,7 +54,7 @@ def download_file(url: str, dest_folder: str, filename: str) -> Path | None:
         return None
 
 
-def download_file_multi_sources(filename: str, dest_folder: str) -> Path | None:
+def download_file_multi_sources(filename: str, dest_folder: str) -> Optional[Path]:
     """
     尝试从多个下载源下载文件，直到成功或所有源都失败。
     """
@@ -87,7 +88,7 @@ def unzip_file(zip_path: Path, extract_to: Path) -> bool:
         return False
 
 
-def download_release_files(tagName) -> tuple[Path | None, Path | None]:
+def download_release_files(tagName) -> Tuple[Optional[Path], Optional[Path]]:
     log.info(f"准备下载 HugoAura 资源文件...")
 
     global desiredTag

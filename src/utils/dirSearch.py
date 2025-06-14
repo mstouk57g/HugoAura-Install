@@ -1,10 +1,11 @@
 import os
 from pathlib import Path
+from typing import Optional
 from logger.initLogger import log
 from config.config import SWASS_PATH_PATTERN
 
 
-def find_seewo_resources_dir() -> str | None:
+def find_seewo_resources_dir() -> Optional[str]:
     log.info(f"尝试查找 SeewoServiceAssistant 安装目录, 匹配: {SWASS_PATH_PATTERN}")
 
     try:
