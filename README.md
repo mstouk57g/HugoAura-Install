@@ -2,6 +2,10 @@
 
 HugoAura 的生命周期管理工具
 
+> [!WARNING]
+>
+> 您正在查看适用于 Windows 7 构建的兼容性子分支。
+
 ## 简介
 
 这是一个用于 [HugoAura](https://github.com/HugoAura/Seewo-HugoAura) 的管理工具, 支持安装以及备份管理等功能。
@@ -76,14 +80,12 @@ HugoAura-Install.exe -l -d "C:\Program Files (x86)\Seewo\SeewoService\SeewoServi
 
 ### 预先准备
 
-- [Poetry](https://python-poetry.org/)
-- Python 3.13.X
+- Python 3.8.X
 
 ### 构建方法
 
-1. 创建 venv & 安装依赖：`poetry install`
-2. 进入 venv: `poetry shell` (可能需要手动安装 Shell Plugin)
-3. 运行构建脚本：`scripts\build.bat`
+1. 安装依赖：`pip install -r requirements.txt`
+2. 运行构建脚本：`scripts\build.bat`
 
 ### 贡献代码
 

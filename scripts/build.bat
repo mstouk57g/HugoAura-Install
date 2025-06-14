@@ -6,7 +6,7 @@ del /q /f *.spec
 
 echo Building Aura Installer executable...
 
-poetry run pyinstaller ^
+pyinstaller ^
     --noconfirm ^
     --onefile ^
     --console ^

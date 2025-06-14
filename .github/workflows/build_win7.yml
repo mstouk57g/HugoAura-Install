@@ -1,10 +1,10 @@
-name: Build Aura Installer
+name: Build Aura Installer (Windows 7)
 
 on:
   push:
-    branches: [master]
+    branches: [win-7-support]
   pull_request:
-    branches: [master]
+    branches: [win-7-support]
   workflow_dispatch:
 
 jobs:
@@ -17,24 +17,17 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.13"
-
-      - name: Install Poetry
-        run: pip install poetry
+          python-version: "3.8"
 
       - name: Install dependencies
-        run: poetry install
+        run: pip install -r requirements.txt
 
       - name: Build project
         run: |
-          $venvPath = poetry env info --path
-          & "$venvPath\Scripts\Activate.ps1"
-
-          & ".\scripts\build.bat"
-        shell: powershell
+          scripts\build.bat
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AuraInstaller
+          name: AuraInstaller-Py-3.8
           path: dist/AuraInstaller.exe
