@@ -6,12 +6,16 @@ del /q /f *.spec
 
 echo Building Aura Installer executable...
 
+cd src/
+
 pyinstaller ^
     --noconfirm ^
     --onefile ^
     --console ^
     --name AuraInstaller ^
-    src/main.py
+    main.py
+
+move ./dist ../dist
 
 echo Build finished. Check the 'dist' folder.
 pause
