@@ -54,7 +54,7 @@ if not exist "hugoaura_installer.spec" (
     exit /b 1
 )
 
-if not exist "src\app\pubilc\aura.ico" (
+if not exist "src\app\public\aura.ico" (
     echo 警告: 图标文件不存在，继续构建...
 )
 

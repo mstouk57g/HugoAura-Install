@@ -12,6 +12,7 @@ from pathlib import Path
 import argparse
 
 from installer import run_installation
+from uninstaller import run_uninstallation, get_uninstall_info
 
 
 class InstallerModel:
@@ -23,6 +24,7 @@ class InstallerModel:
         self.install_status = "就绪"
         self.current_step = ""
         self.is_installing = False
+        self.is_uninstalling = False
         self.install_thread = None
         
         # 回调函数
@@ -37,6 +39,13 @@ class InstallerModel:
             'custom_path': '',
             'install_directory': '',
             'non_interactive': True
+        }
+        
+        # 卸载选项
+        self.uninstall_options = {
+            'keep_user_data': False,
+            'force': False,
+            'dry_run': False
         }
     
     def set_progress_callback(self, callback: Callable[[int, str], None]):
@@ -89,8 +98,8 @@ class InstallerModel:
     
     def start_install(self):
         """开始安装"""
-        if self.is_installing:
-            return False, "安装正在进行中"
+        if self.is_installing or self.is_uninstalling:
+            return False, "操作正在进行中"
         
         # 验证安装选项
         valid, message = self.validate_install_options()
@@ -107,6 +116,22 @@ class InstallerModel:
         self.install_thread.start()
         
         return True, "安装已开始"
+    
+    def start_uninstall(self):
+        """开始卸载"""
+        if self.is_installing or self.is_uninstalling:
+            return False, "操作正在进行中"
+        
+        self.is_uninstalling = True
+        self.install_progress = 0
+        self.update_status("准备卸载...")
+        
+        # 在新线程中执行卸载
+        self.install_thread = threading.Thread(target=self._uninstall_worker)
+        self.install_thread.daemon = True
+        self.install_thread.start()
+        
+        return True, "卸载已开始"
     
     def _install_worker(self):
         """安装工作线程"""
@@ -144,6 +169,42 @@ class InstallerModel:
         finally:
             self.is_installing = False
     
+    def _uninstall_worker(self):
+        """卸载工作线程"""
+        try:
+            # 构建命令行参数对象
+            args = self._build_uninstall_args()
+            
+            # 传递进度回调函数给卸载器
+            args.progress_callback = self.update_progress
+            args.status_callback = self.update_status
+            
+            # 开始卸载进度更新
+            self.update_progress(0, "[0/8] 准备卸载...")
+            
+            if not self.is_uninstalling:  # 检查是否被取消
+                return
+            
+            # 执行实际卸载
+            result = run_uninstallation(args)
+            
+            if result:
+                self.update_progress(100, "[8/8] 卸载完成")
+                self.update_status("卸载完成")
+                if self.completed_callback:
+                    self.completed_callback(True, "HugoAura 卸载成功！希沃管家已恢复原始状态。")
+            else:
+                self.update_status("卸载失败")
+                if self.completed_callback:
+                    self.completed_callback(False, "卸载过程中发生错误")
+                    
+        except Exception as e:
+            self.update_status("卸载失败")
+            if self.completed_callback:
+                self.completed_callback(False, f"卸载失败: {str(e)}")
+        finally:
+            self.is_uninstalling = False
+    
     def cancel_install(self):
         """取消安装"""
         if self.is_installing:
@@ -153,6 +214,20 @@ class InstallerModel:
                 # 注意：这里不能强制终止线程，只能设置标志位
                 pass
             self.update_status("安装已取消")
+    
+    def cancel_uninstall(self):
+        """取消卸载"""
+        if self.is_uninstalling:
+            self.is_uninstalling = False
+            self.update_status("正在取消卸载...")
+            if self.install_thread and self.install_thread.is_alive():
+                # 注意：这里不能强制终止线程，只能设置标志位
+                pass
+            self.update_status("卸载已取消")
+    
+    def get_uninstall_info(self) -> Dict[str, Any]:
+        """获取卸载信息"""
+        return get_uninstall_info()
     
     def _build_install_args(self) -> argparse.Namespace:
         """构建安装参数"""
@@ -185,10 +260,21 @@ class InstallerModel:
         
         return args
     
+    def _build_uninstall_args(self) -> argparse.Namespace:
+        """构建卸载参数"""
+        args = argparse.Namespace()
+        
+        args.keep_user_data = self.uninstall_options['keep_user_data']
+        args.force = self.uninstall_options['force']
+        args.dry_run = self.uninstall_options['dry_run']
+        
+        return args
+    
     def get_install_status(self) -> Dict[str, Any]:
         """获取当前安装状态"""
         return {
             'is_installing': self.is_installing,
+            'is_uninstalling': self.is_uninstalling,
             'progress': self.install_progress,
             'status': self.install_status,
             'current_step': self.current_step

@@ -30,6 +30,7 @@ class MainWindow:
         # 回调函数
         self.install_callback: Optional[Callable] = None
         self.cancel_callback: Optional[Callable] = None
+        self.uninstall_callback: Optional[Callable] = None
         
         # 控件变量
         self.version_var = tk.StringVar(value="latest")
@@ -67,9 +68,16 @@ class MainWindow:
             main_frame, 
             text="HugoAura 安装器", 
             font=("Microsoft YaHei UI", 20, "bold"),
-            bootstyle=PRIMARY
+            bootstyle=PRIMARY,
+            cursor="hand2"  # 设置鼠标悬停时的手型光标
         )
         title_label.pack(pady=(0, 10))
+        
+        # 绑定标题点击事件
+        title_label.bind("<Button-1>", lambda e: self._show_about())
+        
+        # 添加悬停提示
+        self._create_tooltip(title_label, "点击查看关于信息")
         
         # 权限状态显示
         self._create_permission_status(main_frame)
@@ -116,6 +124,44 @@ class MainWindow:
             return ctypes.windll.shell32.IsUserAnAdmin()
         except:
             return False
+    
+    def _create_tooltip(self, widget, text):
+        """为控件创建工具提示"""
+        def on_enter(event):
+            tooltip = tk.Toplevel()
+            tooltip.wm_overrideredirect(True)
+            tooltip.configure(bg='#ffffe0')
+            
+            # 获取鼠标位置
+            x = widget.winfo_rootx() + 25
+            y = widget.winfo_rooty() + 25
+            tooltip.geometry(f"+{x}+{y}")
+            
+            label = tk.Label(
+                tooltip, 
+                text=text, 
+                background='#ffffe0',
+                relief='solid',
+                borderwidth=1,
+                font=("Microsoft YaHei UI", 9)
+            )
+            label.pack()
+            
+            # 保存tooltip引用
+            widget.tooltip = tooltip
+            
+            # 2秒后自动消失
+            tooltip.after(2000, tooltip.destroy)
+        
+        def on_leave(event):
+            if hasattr(widget, 'tooltip'):
+                try:
+                    widget.tooltip.destroy()
+                except:
+                    pass
+        
+        widget.bind('<Enter>', on_enter)
+        widget.bind('<Leave>', on_leave)
     
     def _create_version_section(self, parent):
         """创建版本选择区域"""
@@ -270,6 +316,16 @@ class MainWindow:
         )
         self.install_btn.pack(side=LEFT, padx=(0, 10))
         
+        # 卸载按钮
+        self.uninstall_btn = ttk_bs.Button(
+            button_frame,
+            text="卸载HugoAura",
+            command=self._on_uninstall_click,
+            bootstyle=(WARNING, "outline"),
+            width=15
+        )
+        self.uninstall_btn.pack(side=LEFT, padx=(0, 10))
+        
         # 取消按钮
         self.cancel_btn = ttk_bs.Button(
             button_frame,
@@ -280,16 +336,6 @@ class MainWindow:
             state=DISABLED
         )
         self.cancel_btn.pack(side=LEFT)
-        
-        # 关于按钮
-        about_btn = ttk_bs.Button(
-            button_frame,
-            text="关于",
-            command=self._show_about,
-            bootstyle=(INFO, "outline"),
-            width=15
-        )
-        about_btn.pack(side=RIGHT)
     
     def _update_version_inputs(self):
         """更新版本输入控件状态"""
@@ -354,17 +400,50 @@ class MainWindow:
         if self.cancel_callback:
             self.cancel_callback()
     
+    def _on_uninstall_click(self):
+        """卸载按钮点击事件"""
+        # 显示确认对话框
+        confirm = messagebox.askyesno(
+            "确认卸载", 
+            "确定要卸载HugoAura吗？\n\n卸载后希沃管家将恢复到原始状态。\n此操作不可逆，请确认。",
+            icon='warning'
+        )
+        
+        if confirm and self.uninstall_callback:
+            # 收集卸载选项
+            uninstall_options = {
+                'keep_user_data': False,  # 可以后续添加选项让用户选择
+                'force': False,
+                'dry_run': False
+            }
+            self.uninstall_callback(uninstall_options)
+    
     def _show_about(self):
         """显示关于对话框"""
         about_text = """HugoAura 安装器 v1.0
 
-这是一个用于安装和管理 HugoAura 的工具。
-HugoAura 是针对希沃设备的增强工具。
+这是一个用于安装和管理 HugoAura 的现代化工具
+HugoAura 是针对希沃设备的增强工具
+
+主要功能:
+• 一键安装 HugoAura
+• 智能检测希沃管家
+• 自动备份原始文件  
+• 一键完全卸载
+• 多版本支持
+
+安全特性:
+• 自动请求管理员权限
+• 备份保护机制
+• 完整的卸载恢复
+
+提示: 点击标题可再次打开此界面
 
 作者: vistamin
-基于: ttkbootstrap & tkinter"""
+基于: ttkbootstrap & tkinter
+GitHub: HugoAura/Seewo-HugoAura"""
         
-        messagebox.showinfo("关于", about_text)
+        messagebox.showinfo("关于 HugoAura 安装器", about_text)
     
     def set_install_callback(self, callback: Callable):
         """设置安装回调函数"""
@@ -373,6 +452,10 @@ HugoAura 是针对希沃设备的增强工具。
     def set_cancel_callback(self, callback: Callable):
         """设置取消回调函数"""
         self.cancel_callback = callback
+    
+    def set_uninstall_callback(self, callback: Callable):
+        """设置卸载回调函数"""
+        self.uninstall_callback = callback
     
     def update_progress(self, progress: int, step: str = ""):
         """更新进度"""
@@ -386,11 +469,16 @@ HugoAura 是针对希沃设备的增强工具。
         self.status_var.set(status)
         self.root.update_idletasks()
     
-    def set_installing_state(self, installing: bool):
-        """设置安装状态"""
+    def set_installing_state(self, installing: bool, operation: str = "安装"):
+        """设置安装/卸载状态"""
         self.is_installing = installing
         if installing:
-            self.install_btn.config(state=DISABLED, text="安装中...")
+            if operation == "卸载":
+                self.install_btn.config(state=DISABLED)
+                self.uninstall_btn.config(state=DISABLED, text="卸载中...")
+            else:
+                self.install_btn.config(state=DISABLED, text="安装中...")
+                self.uninstall_btn.config(state=DISABLED)
             self.cancel_btn.config(state=NORMAL)
             # 禁用输入控件
             for widget in [self.custom_version_entry, self.custom_path_entry, 
@@ -398,6 +486,7 @@ HugoAura 是针对希沃设备的增强工具。
                 widget.config(state=DISABLED)
         else:
             self.install_btn.config(state=NORMAL, text="开始安装")
+            self.uninstall_btn.config(state=NORMAL, text="卸载HugoAura")
             self.cancel_btn.config(state=DISABLED)
             # 恢复输入控件状态
             self._update_version_inputs()

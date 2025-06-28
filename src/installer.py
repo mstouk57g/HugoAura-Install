@@ -294,6 +294,17 @@ def run_installation(args=None):
 
         log.info(f"正在将 {original_asar_path} 替换为新的 {temp_asar_path.name}...")
 
+        # 创建原始ASAR文件的备份
+        backup_asar_path = install_dir_path / "app.asar.backup"
+        if original_asar_path.exists() and not backup_asar_path.exists():
+            try:
+                log.info(f"创建原始ASAR备份: {backup_asar_path}")
+                if not args.dry_run:
+                    shutil.copy2(str(original_asar_path), str(backup_asar_path))
+                log.success("原始ASAR备份创建成功")
+            except Exception as e:
+                log.warning(f"创建ASAR备份失败: {e}")
+
         def del_original_asar():
             if original_asar_path.exists():
                 log.info(f"尝试删除旧的 {original_asar_path}...")

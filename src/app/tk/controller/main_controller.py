@@ -35,6 +35,7 @@ class MainController:
         # 设置按钮回调
         self.view.set_install_callback(self._on_install)
         self.view.set_cancel_callback(self._on_cancel)
+        self.view.set_uninstall_callback(self._on_uninstall)
         
         # 设置窗口关闭事件
         self.view.root.protocol("WM_DELETE_WINDOW", self._on_window_close)
@@ -82,15 +83,21 @@ class MainController:
     
     def _on_cancel(self):
         """处理取消事件"""
-        logger.info("用户请求取消安装")
+        logger.info("用户请求取消操作")
         
         # 显示确认对话框
         import tkinter.messagebox as messagebox
-        if messagebox.askyesno("确认", "确定要取消安装吗？"):
-            # 取消安装
-            self.model.cancel_install()
-            self.view.set_installing_state(False)
-            logger.info("安装已取消")
+        
+        if self.model.is_installing:
+            if messagebox.askyesno("确认", "确定要取消安装吗？"):
+                self.model.cancel_install()
+                self.view.set_installing_state(False)
+                logger.info("安装已取消")
+        elif self.model.is_uninstalling:
+            if messagebox.askyesno("确认", "确定要取消卸载吗？"):
+                self.model.cancel_uninstall()
+                self.view.set_installing_state(False)
+                logger.info("卸载已取消")
     
     def _on_progress_update(self, progress: int, step: str):
         """处理进度更新"""
@@ -123,14 +130,18 @@ class MainController:
         """处理窗口关闭事件"""
         logger.info("用户请求关闭窗口")
         
-        # 如果正在安装，询问是否确认关闭
-        if self.model.is_installing:
+        # 如果正在安装或卸载，询问是否确认关闭
+        if self.model.is_installing or self.model.is_uninstalling:
             import tkinter.messagebox as messagebox
-            if not messagebox.askyesno("确认", "安装正在进行中，确定要退出吗？"):
+            operation = "安装" if self.model.is_installing else "卸载"
+            if not messagebox.askyesno("确认", f"{operation}正在进行中，确定要退出吗？"):
                 return
             
-            # 取消安装
-            self.model.cancel_install()
+            # 取消操作
+            if self.model.is_installing:
+                self.model.cancel_install()
+            elif self.model.is_uninstalling:
+                self.model.cancel_uninstall()
         
         # 清理资源
         self._cleanup()
@@ -176,6 +187,38 @@ class MainController:
             # 这里可以扩展主题切换功能
         except Exception as e:
             logger.error(f"主题切换失败: {e}")
+    
+    def _on_uninstall(self, options: Dict[str, Any]):
+        """处理卸载事件"""
+        logger.info(f"开始卸载，选项: {options}")
+        
+        try:
+            # 更新模型的卸载选项
+            self.model.uninstall_options.update(options)
+            
+            # 获取卸载信息
+            uninstall_info = self.model.get_uninstall_info()
+            
+            if not uninstall_info['can_uninstall']:
+                self.view.show_message("信息", "未检测到HugoAura安装", "info")
+                return
+            
+            # 设置UI为卸载状态
+            self.view.set_installing_state(True, "卸载")
+            
+            # 开始卸载
+            success, message = self.model.start_uninstall()
+            if not success:
+                self.view.show_message("错误", message, "error")
+                self.view.set_installing_state(False)
+                return
+            
+            logger.info("卸载已开始")
+            
+        except Exception as e:
+            logger.error(f"卸载启动失败: {e}")
+            self.view.show_message("错误", f"卸载启动失败: {str(e)}", "error")
+            self.view.set_installing_state(False)
 
 
 # 便捷函数
