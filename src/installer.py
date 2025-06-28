@@ -7,9 +7,11 @@ import sys
 import winreg
 import requests
 from pathlib import Path
-from logger.initLogger import log
+from loguru import logger as log
 from utils import dirSearch, fileDownloader, killer
 from config import config
+import lifecycle as lifecycleMgr
+import typeDefs.lifecycle as lifecycleTypes
 
 
 def fetch_github_releases():
@@ -132,12 +134,13 @@ def select_release_source(args=None):
         print("输入无效, 请重新输入。")
 
 
-def run_installation(args=None):
+def run_installation(args=None, installerClassIns=None):
     """
     运行安装流程
 
     参数:
         args: 命令行参数对象，如果提供则尝试使用非交互式方式安装
+        installerClassIns: InstallerModel 实例
 
     返回:
         bool: 安装是否成功
@@ -147,25 +150,35 @@ def run_installation(args=None):
     downloaded_asar_path = None
     downloaded_zip_path = None
     download_source = None
-    
+
+    error_detail = ""
+
     # 获取进度回调函数
-    progress_callback = getattr(args, 'progress_callback', None)
-    status_callback = getattr(args, 'status_callback', None)
-    
-    def update_progress(progress, step):
-        if progress_callback:
-            progress_callback(progress, step)
-        log.info(step)
-    
+    progress_callback = getattr(args, "progress_callback", None)
+    status_callback = getattr(args, "status_callback", None)
+
     def update_status(status):
         if status_callback:
             status_callback(status)
 
+    def update_progress(progress, step, status=None):
+        if installerClassIns:
+            if not installerClassIns.is_installing:
+                update_status("安装已取消")
+                raise Exception("INSTALLATION_CANCELLED")
+        if progress_callback:
+            progress_callback(progress, step, status)
+        log.info(step)
+
+    def rep_dl_progress(curDownloadSize, fullSize, fileName):
+        progress = round(curDownloadSize / fullSize * 100, 2)
+        update_progress(progress, f"[3 / 10] {fileName} 文件下载中, 进度: {progress} %")
+
     try:
-        update_progress(0, "[0/10] 准备")
+        update_progress(0, "[0 / 10] 准备")
         log.info(f"即将开始运行 {config.APP_NAME} 管理工具")
 
-        update_progress(10, "[1/10] 查找希沃管家安装目录")
+        update_progress(10, "[1 / 10] 查找希沃管家安装目录")
         # 如果指定了安装目录
         if args and args.dir:
             install_dir_path_str = args.dir
@@ -188,14 +201,17 @@ def run_installation(args=None):
 
         install_dir_path = Path(install_dir_path_str)
 
-        update_progress(20, "[2/10] 选择 HugoAura 版本")
+        update_progress(20, "[2 / 10] 选择 HugoAura 版本")
         download_source = select_release_source(args)
         if os.path.exists(download_source):
             log.info(f"已选择本地文件: {download_source}")
         else:
             log.info(f"已选择版本 Tag: {download_source}")
 
-        update_progress(30, "[3/10] 获取资源文件")
+        update_progress(30, "[3 / 10] 获取资源文件")
+        dlCallbackFuncName = (
+            lifecycleTypes.GLOBAL_CALLBACKS.REPORT_DOWNLOAD_PROGRESS.value
+        )
         if not str.startswith(download_source, "v"):
             if os.path.exists(download_source):
                 downloaded_asar_path = Path(download_source)
@@ -211,6 +227,7 @@ def run_installation(args=None):
                 log.critical("请输入合法的路径")
                 return False
         else:
+            lifecycleMgr.callbacks[dlCallbackFuncName] = rep_dl_progress
             downloaded_asar_path, downloaded_zip_path = (
                 fileDownloader.download_release_files(download_source)
             )
@@ -218,7 +235,9 @@ def run_installation(args=None):
             log.critical("资源文件下载失败, 即将结束安装")
             return False
 
-        update_progress(40, "[4/10] 解压资源文件")
+        lifecycleMgr.callbacks[dlCallbackFuncName] = None
+
+        update_progress(40, "[4 / 10] 解压资源文件")
         temp_extract_path = Path(config.TEMP_INSTALL_DIR + "\\aura")
         if not fileDownloader.unzip_file(downloaded_zip_path, temp_extract_path):
             log.critical("资源文件解压失败, 即将结束安装")
@@ -241,7 +260,7 @@ def run_installation(args=None):
                 log.critical("Aura.zip 结构解析失败, 即将结束安装")
                 return False
 
-        update_progress(50, "[5/10] 卸载文件系统过滤驱动")
+        update_progress(50, "[5 / 10] 卸载文件系统过滤驱动")
         try:
             if not args.dry_run:
                 creationflags = subprocess.CREATE_NO_WINDOW
@@ -263,7 +282,7 @@ def run_installation(args=None):
         except Exception as e:
             log.error(f"调用 fltmc 时发生未知错误: {e}")
 
-        update_progress(60, "[6/10] 移动 Aura 文件夹")
+        update_progress(60, "[6 / 10] 移动 Aura 文件夹")
         target_aura_path = install_dir_path / config.EXTRACTED_FOLDER_NAME
         log.info(
             f"即将将 '{config.EXTRACTED_FOLDER_NAME}' 移动至 {target_aura_path}..."
@@ -283,19 +302,19 @@ def run_installation(args=None):
             log.critical(f"移动文件夹 '{config.EXTRACTED_FOLDER_NAME}' 时发生错误: {e}")
             return False
 
-        update_progress(70, "[7/10] 启动结束进程后台任务")
+        update_progress(70, "[7 / 10] 启动结束进程后台任务")
         if not args.dry_run:
             killer.start_killing_process()
             time.sleep(2.0)
 
-        update_progress(80, "[8/10] 替换 ASAR 包")
+        update_progress(80, "[8 / 10] 替换 ASAR 包")
         original_asar_path = install_dir_path / config.TARGET_ASAR_NAME
         temp_asar_path = downloaded_asar_path
 
         log.info(f"正在将 {original_asar_path} 替换为新的 {temp_asar_path.name}...")
 
         # 创建原始ASAR文件的备份
-        backup_asar_path = install_dir_path / "app.asar.backup"
+        backup_asar_path = install_dir_path / "app.asar.bak"
         if original_asar_path.exists() and not backup_asar_path.exists():
             try:
                 log.info(f"创建原始ASAR备份: {backup_asar_path}")
@@ -342,7 +361,7 @@ def run_installation(args=None):
             )
             install_success = False
 
-        update_progress(90, "[9/10] 写入版本信息和安装时间到注册表")
+        update_progress(90, "[9 / 10] 写入版本信息和安装时间到注册表")
         # 写入版本信息和安装时间到注册表
         try:
             if not args.dry_run:
@@ -368,10 +387,18 @@ def run_installation(args=None):
             log.warning(f"写入注册表失败: {e}")
 
     except Exception as e:
-        log.exception(f"安装过程中发生未知错误: {e}")
+        error_detail = e
+        if installerClassIns and not installerClassIns.is_installing:
+            log.warning(f"用户取消了安装操作")
+        else:
+            log.exception(f"安装过程中发生未知错误: {e}")
         install_success = False
     finally:
-        update_progress(100, "[10/10] 清理工作")
+        update_progress(
+            100,
+            f"[10 / 10] 安装{"完成" if install_success else f"出错: {error_detail}"}",
+            "success" if install_success else "error",
+        )
 
         if not args.dry_run:
             killer.stop_killing_process()
@@ -397,4 +424,4 @@ def run_installation(args=None):
             log.error(f"{config.APP_NAME} 安装失败")
             log.error("---------------------------------------------")
 
-        return install_success
+        return {"success": install_success, "errorInfo": error_detail}

@@ -2,8 +2,9 @@ import sys
 import os
 import time
 import argparse
-from logger.initLogger import log
+from loguru import logger as log
 from utils import uac
+from version import __appVer__
 import installer
 from config import config
 
@@ -45,6 +46,9 @@ def parse_arguments():
     parser.add_argument(
         "--list-exit-codes", help="显示所有退出代码及其释义", action="store_true"
     )
+    parser.add_argument(
+        "--cli", help="以 CLI 模式启动", action="store_true"
+    )
 
     return parser.parse_args()
 
@@ -69,7 +73,7 @@ def main():
         sys.exit(0)
 
     log.info(f"--- 启动 {config.APP_NAME} 管理工具 ---")
-    log.info(f"管理工具版本: 0.0.2-alpha")
+    log.info(f"管理工具版本: {__appVer__}")
     log.info(f"EXEC: {sys.executable}")
     log.info(f"Arg: {sys.argv}")
 

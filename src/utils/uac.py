@@ -1,7 +1,7 @@
 import ctypes
 import sys
 import os
-from logger.initLogger import log
+from loguru import logger as log
 
 
 def is_admin() -> bool:

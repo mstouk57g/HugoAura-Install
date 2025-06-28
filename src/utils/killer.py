@@ -1,6 +1,6 @@
 import subprocess
 import threading
-from logger.initLogger import log
+from loguru import logger as log
 from config.config import TARGET_PROCESS_NAME, PROCESS_KILL_INTERVAL_SECONDS
 
 _stop_event = threading.Event()

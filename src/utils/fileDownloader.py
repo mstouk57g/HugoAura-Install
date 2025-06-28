@@ -4,19 +4,21 @@ import zipfile
 import shutil
 import os
 from pathlib import Path
-from logger.initLogger import log
+from loguru import logger as log
 from config.config import (
     BASE_DOWNLOAD_URLS,
     ASAR_FILENAME,
     ZIP_FILENAME,
     TEMP_INSTALL_DIR,
 )
+import typeDefs.lifecycle
+import lifecycle as lifecycleMgr
 
 
 desiredTag = None
 
 
-def download_file(url: str, dest_folder: str, filename: str) -> Path | None:
+def download_file(url: str, dest_folder: str, filename: str) -> Path | str | None:
     dest_path = Path(dest_folder) / filename
     log.info(f"正在从 {url} 下载 {filename}, 目标目录: {dest_path}")
 
@@ -37,7 +39,21 @@ def download_file(url: str, dest_folder: str, filename: str) -> Path | None:
             )
 
             with open(dest_path, "wb") as f:
-                shutil.copyfileobj(r.raw, f)
+                downloaded_size = 0
+                chunk_size = 8192
+                for chunk in r.iter_content(chunk_size=chunk_size):
+                    if chunk:
+                        f.write(chunk)
+                        downloaded_size += len(chunk)
+
+                        callbackFuncName = (
+                            typeDefs.lifecycle.GLOBAL_CALLBACKS.REPORT_DOWNLOAD_PROGRESS.value
+                        )
+                        if callbackFuncName in lifecycleMgr.callbacks.keys():
+                            if lifecycleMgr.callbacks[callbackFuncName]:
+                                lifecycleMgr.callbacks[callbackFuncName](
+                                    downloaded_size, total_size, f.name.split("\\")[-1]
+                                )  # type: ignore
 
         log.success(f"文件 {filename} 下载成功。")
         return dest_path
@@ -47,6 +63,8 @@ def download_file(url: str, dest_folder: str, filename: str) -> Path | None:
             os.remove(dest_path)
         return None
     except Exception as e:
+        if "INSTALLATION_CANCELLED" in str(e):
+            return "DL_CANCEL"
         log.error(f"写入文件 {filename} 时发生意外错误: {e}")
         if dest_path.exists():
             os.remove(dest_path)
@@ -63,8 +81,11 @@ def download_file_multi_sources(filename: str, dest_folder: str) -> Path | None:
     for base_url in BASE_DOWNLOAD_URLS:
         url = f"{base_url}/{desiredTag}/{filename}"
         result = download_file(url, dest_folder, filename)
-        if result:
-            return result
+        if result == "DL_CANCEL":
+            log.warning("下载已取消")
+            return None
+        elif result:
+            return result  # type: ignore
         else:
             log.warning(f"从 {url} 下载失败，尝试下一个源...")
     log.critical(f"所有下载源均失败, 无法下载 {filename}")

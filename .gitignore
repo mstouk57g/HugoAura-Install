@@ -5,3 +5,6 @@ dist/
 .DS_Store
 docs_temp/
 .venv/
+
+# Editor files
+.vscode/

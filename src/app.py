@@ -1,14 +1,13 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 HugoAura-Install GUI 启动器
-author: vistamin
 """
 
 import sys
-import os
 import ctypes
 from pathlib import Path
+from loguru import logger
+
+import main as cliEntryMain
 
 # 添加项目根目录到 Python 路径
 project_root = Path(__file__).parent
@@ -69,22 +68,22 @@ def show_error_dialog(message):
         
         root = tk.Tk()
         root.withdraw()  # 隐藏主窗口
-        messagebox.showerror("AuraInstaller错误", message)
+        messagebox.showerror("AuraInstaller 错误", message)
         root.destroy()
     except:
         # 如果连tkinter都不可用，就用系统消息框
         try:
-            ctypes.windll.user32.MessageBoxW(0, message, "AuraInstaller错误", 0x10)
+            ctypes.windll.user32.MessageBoxW(0, message, "AuraInstaller 错误", 0x10)
         except:
             print(f"错误: {message}")
 
 
 def main():
-    """GUI应用程序入口"""
+    """应用程序入口"""
     try:
         # 检查并提升管理员权限
         if not is_admin():
-            print("AuraInstaller需要管理员权限才能正常工作")
+            print("AuraInstaller 需要管理员权限才能正常工作")
             print("正在请求管理员权限...")
             if not run_as_admin():
                 sys.exit(0)  # 已启动新的管理员进程，退出当前进程
@@ -96,9 +95,13 @@ def main():
             print(f"日志初始化失败: {e}")
             # 继续执行，不让日志问题阻止程序运行
         
-        # 创建并启动主控制器
-        app = MainController()
-        app.run()
+        if "--cli" in sys.argv:
+            # 以 CLI 模式启动
+            app = cliEntryMain.main()
+        else:
+            # 创建并启动主控制器
+            app = MainController()
+            app.run()
         
     except ImportError as e:
         error_msg = f"模块导入失败: {e}\n\n请确保所有依赖都已正确安装:\n- ttkbootstrap\n- pillow\n- loguru\n- requests"
@@ -106,6 +109,7 @@ def main():
         sys.exit(1)
     except Exception as e:
         error_msg = f"启动GUI应用失败: {e}"
+        logger.error(f"{e}")
         show_error_dialog(error_msg)
         sys.exit(1)
 

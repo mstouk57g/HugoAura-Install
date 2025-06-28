@@ -2,6 +2,10 @@
 
 HugoAura 的生命周期管理工具
 
+> [!TIP]
+>
+> 感谢 @Vistaminc 的贡献, 目前 HugoAura-Install 已支持 GUI 图形化界面安装!
+
 ## 简介
 
 这是一个用于 [HugoAura](https://github.com/HugoAura/Seewo-HugoAura) 的管理工具, 支持安装以及备份管理等功能。
@@ -17,9 +21,10 @@ HugoAura 的生命周期管理工具
 ### 命令行参数
 
 ```
-usage: AuraInstaller.exe [-h] [-v VERSION | -p PATH | -l | --pre] [-d DIR] [-y] [--list-exit-codes]
+usage: AuraInstaller.exe [--cli] [-h] [-v VERSION | -p PATH | -l | --pre] [-d DIR] [-y] [--list-exit-codes]
 
 options:
+  --cli                 以 CLI (无 GUI) 模式启动
   -h, --help            显示帮助信息并退出
   -v VERSION, --version VERSION
                         指定要安装的版本 Tag，例如 v1.0.0
@@ -35,19 +40,19 @@ options:
 
 ```bash
 # 安装最新稳定版
-HugoAura-Install.exe -l -y
+HugoAura-Install.exe --cli -l -y
 
 # 安装最新预发行版
-HugoAura-Install.exe --pre -y
+HugoAura-Install.exe --cli --pre -y
 
 # 安装指定版本
-HugoAura-Install.exe -v v1.0.0 -y
+HugoAura-Install.exe --cli -v v1.0.0 -y
 
 # 从本地文件安装
-HugoAura-Install.exe -p "C:\path\to\app-patched.asar" -y
+HugoAura-Install.exe --cli -p "C:\path\to\app-patched.asar" -y
 
 # 指定安装目录
-HugoAura-Install.exe -l -d "C:\Program Files (x86)\Seewo\SeewoService\SeewoService_1.0.0\SeewoServiceAssistant\resources" -y
+HugoAura-Install.exe --cli -l -d "C:\Program Files (x86)\Seewo\SeewoService\SeewoService_1.0.0\SeewoServiceAssistant\resources" -y
 ```
 
 ### 退出代码释义

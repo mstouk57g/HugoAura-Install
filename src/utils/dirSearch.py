@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from logger.initLogger import log
+from loguru import logger as log
 from config.config import SWASS_PATH_PATTERN
 
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-版本信息文件，用于PyInstaller生成带有版本信息的exe文件
+版本信息文件, 用于PyInstaller生成带有版本信息的exe文件
 """
 
 VSVersionInfo(
@@ -29,15 +29,14 @@ VSVersionInfo(
                 StringTable(
                     u'080404B0',  # 简体中文，Unicode
                     [
-                        StringStruct(u'CompanyName', u'HugoAura Team'),
+                        StringStruct(u'CompanyName', u'HugoAura Devs'),
                         StringStruct(u'FileDescription', u'HugoAura - 希沃设备增强工具安装程序'),
-                        StringStruct(u'FileVersion', u'1.0.0.0'),
+                        StringStruct(u'FileVersion', u'0.0.3-alpha'),
                         StringStruct(u'InternalName', u'HugoAura Installer'),
-                        StringStruct(u'LegalCopyright', u'Copyright © 2024 HugoAura Team. All rights reserved.'),
-                        StringStruct(u'OriginalFilename', u'HugoAuraInstaller.exe'),
+                        StringStruct(u'LegalCopyright', u'Copyright © 2025 HugoAura Devs. All rights reserved.'),
+                        StringStruct(u'OriginalFilename', u'AuraInstaller.exe'),
                         StringStruct(u'ProductName', u'HugoAura'),
-                        StringStruct(u'ProductVersion', u'1.0.0'),
-                        StringStruct(u'Comments', u'用于安装和管理 HugoAura 的图形界面工具'),
+                        StringStruct(u'ProductVersion', u'0.0.3'),
                     ]
                 )
             ]

@@ -1,5 +1,3 @@
-# -*- mode: python ; coding: utf-8 -*-
-
 import sys
 from pathlib import Path
 
@@ -12,7 +10,7 @@ block_cipher = None
 # 定义数据文件
 datas = [
     # 包含图标文件
-    (str(src_dir / 'app' / 'public' / 'aura.ico'), '.'),
+    (str(src_dir / 'app' / 'public' / 'installer.ico'), 'app/public'),
     # 包含配置文件
     (str(src_dir / 'config'), 'config'),
 ]
@@ -85,11 +83,9 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        # 排除不需要的模块以减小文件大小
         'matplotlib',
         'numpy',
         'pandas',
-        # 注意：已移除PIL从排除列表，因为ttkbootstrap需要它
         'PyQt5',
         'PyQt6',
         'PySide2',
@@ -117,7 +113,7 @@ exe = EXE(
     debug=False,                    # 不包含调试信息
     bootloader_ignore_signals=False,
     strip=False,                    # 不删除符号表
-    upx=True,                      # 使用UPX压缩（如果可用）
+    upx=True,                      # 使用UPX压缩
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,                  # 不显示控制台窗口
@@ -126,20 +122,8 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=str(src_dir / 'app' / 'public' / 'aura.ico'),  # 设置图标
+    icon=str(src_dir / 'app' / 'public' / 'installer.ico'),  # 设置图标
     version_file=str(project_root / 'version_info.py'),  # 版本信息文件
     uac_admin=True,                # 请求管理员权限
     uac_uiaccess=False,
 )
-
-# 如果需要生成目录分发版本，取消注释以下代码
-# coll = COLLECT(
-#     exe,
-#     a.binaries,
-#     a.zipfiles,
-#     a.datas,
-#     strip=False,
-#     upx=True,
-#     upx_exclude=[],
-#     name='AuraInstaller'
-# ) 
