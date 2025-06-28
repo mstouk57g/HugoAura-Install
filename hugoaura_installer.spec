@@ -12,7 +12,7 @@ block_cipher = None
 # 定义数据文件
 datas = [
     # 包含图标文件
-    (str(src_dir / 'app' / 'pubilc' / 'aura.ico'), '.'),
+    (str(src_dir / 'app' / 'public' / 'aura.ico'), '.'),
     # 包含配置文件
     (str(src_dir / 'config'), 'config'),
 ]
@@ -126,7 +126,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=str(src_dir / 'app' / 'pubilc' / 'aura.ico'),  # 设置图标
+    icon=str(src_dir / 'app' / 'public' / 'aura.ico'),  # 设置图标
     version_file=str(project_root / 'version_info.py'),  # 版本信息文件
     uac_admin=True,                # 请求管理员权限
     uac_uiaccess=False,
