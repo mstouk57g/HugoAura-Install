@@ -9,9 +9,7 @@ def setup_logger():
     logger.remove()
 
     try:
-        if sys.stdout is not None:
-            sink = sys.stdout
-        elif sys.stderr is not None:
+        if sys.stderr is not None:
             sink = sys.stderr
         else:
             log_file = os.path.join(os.path.expanduser("~"), "hugoaura_installer.log")
@@ -21,7 +19,7 @@ def setup_logger():
             sink,
             level="DEBUG",
             format="[Aura-Inst] {time:HH:mm:ss} | <level>{level: <8}</level> | {message}",
-            colorize=sink == sys.stdout or sink == sys.stderr,
+            colorize=sink == sys.stderr,
             enqueue=True,
         )
 

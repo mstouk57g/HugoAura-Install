@@ -4,7 +4,7 @@ HugoAura 的生命周期管理工具
 
 > [!TIP]
 >
-> 感谢 @Vistaminc 的贡献, 目前 HugoAura-Install 已支持 GUI 图形化界面安装!
+> 感谢 [@Vistaminc](https://github.com/Vistaminc) 的贡献, 目前 HugoAura-Install 已支持 GUI 图形化界面安装!
 
 ## 简介
 
