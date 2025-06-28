@@ -4,3 +4,5 @@ __pycache__
 build/
 dist/
 .DS_Store
+docs_temp/
+.venv/

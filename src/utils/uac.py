@@ -27,7 +27,14 @@ def run_as_admin():
     try:
         log.info("尝试使用管理员权限重启...")
         script = os.path.abspath(sys.executable)
-        params = " ".join([f'"{arg}"' for arg in sys.argv[1:-1]])
+        
+        # 构建命令行参数，确保正确传递所有参数
+        if len(sys.argv) > 1:
+            # 如果有命令行参数，拼接所有参数
+            params = " ".join([f'"{arg}"' for arg in sys.argv])
+        else:
+            # 如果没有命令行参数，只传递脚本路径
+            params = f'"{sys.argv[0]}"'
 
         ret = ctypes.windll.shell32.ShellExecuteW(
             None,
@@ -46,7 +53,6 @@ def run_as_admin():
             return False
         else:
             log.info("提权成功, 即将退出旧进程...")
-
             sys.exit(0)
 
     except FileNotFoundError:
