@@ -23,7 +23,7 @@ class MainWindow:
         # 创建根窗口
         self.root = ttk_bs.Window(themename=theme)
         self.root.title("HugoAura 安装器")
-        self.root.geometry("600x950")  # 增加窗口高度以适应更多选项
+        self.root.geometry("600x800")
         self.root.resizable(False, False)
         self.root.iconbitmap(
             os.path.join(
@@ -42,7 +42,9 @@ class MainWindow:
         self.cancel_callback: Optional[Callable] = None
 
         # 控件变量
-        self.version_var = tk.StringVar(value="release")  # 版本类型：release, prerelease, ci, custom_version, custom_path
+        self.version_var = tk.StringVar(
+            value="release"
+        )  # 版本类型：release, prerelease, ci, custom_version, custom_path
         self.specific_version_var = tk.StringVar()  # 具体版本
         self.custom_version_var = tk.StringVar()
         self.custom_path_var = tk.StringVar()
@@ -50,6 +52,9 @@ class MainWindow:
         self.progress_var = tk.DoubleVar()
         self.status_var = tk.StringVar(value="正在加载版本信息...")
         self.step_var = tk.StringVar()
+
+        # 控件全局挂载
+        self.version_frame = None
 
         # 版本信息
         self.versions_data = {}
@@ -61,7 +66,7 @@ class MainWindow:
 
         # 初始状态
         self.is_installing = False
-        
+
         # 异步加载版本信息
         self._load_versions_async()
 
@@ -69,22 +74,29 @@ class MainWindow:
         """异步加载版本信息"""
         import threading
         import time
-        
+
         def load_versions():
             try:
                 # 设置超时保护
                 if is_refresh:
                     # 启动超时保护定时器
-                    timeout_timer = threading.Timer(10.0, lambda: self.root.after(0, 
-                        lambda: self._on_versions_load_error("操作超时", is_refresh)))
+                    timeout_timer = threading.Timer(
+                        10.0,
+                        lambda: self.root.after(
+                            0,
+                            lambda: self._on_versions_load_error(
+                                "操作超时", is_refresh
+                            ),
+                        ),
+                    )
                     timeout_timer.start()
-                
+
                 self.versions_data = version_manager.get_versions()
-                
+
                 # 取消超时定时器
                 if is_refresh:
                     timeout_timer.cancel()
-                
+
                 # 在主线程中更新UI
                 self.root.after(0, lambda: self._on_versions_loaded(is_refresh))
             except Exception as e:
@@ -95,8 +107,10 @@ class MainWindow:
                     except:
                         pass
                 # 在主线程中显示错误
-                self.root.after(0, lambda: self._on_versions_load_error(str(e), is_refresh))
-        
+                self.root.after(
+                    0, lambda: self._on_versions_load_error(str(e), is_refresh)
+                )
+
         # 在后台线程中加载版本信息
         thread = threading.Thread(target=load_versions, daemon=True)
         thread.start()
@@ -106,11 +120,11 @@ class MainWindow:
         # 获取数据来源信息
         data_source = self.versions_data.get("data_source", "unknown")
         source_text = {
-            "github_api": "来自GitHub API",
+            "github_api": "来自 GitHub API",
             "local_json": "来自本地文件",
-            "empty": "无版本数据"
+            "empty": "无版本数据",
         }.get(data_source, "未知来源")
-        
+
         if is_refresh:
             self._set_refresh_state(False)
             if data_source == "github_api":
@@ -122,11 +136,13 @@ class MainWindow:
                 self.status_var.set("版本信息刷新完成")
                 self.step_var.set(f"使用备份版本信息 ({source_text})")
                 # 显示警告提示
-                self.show_message("刷新完成", f"GitHub API不可用，使用本地备份版本信息", "warning")
+                self.show_message(
+                    "刷新完成", f"GitHub API 不可用, 使用本地备份版本信息", "warning"
+                )
         else:
             self.status_var.set("就绪")
             self.step_var.set(f"版本信息已加载 ({source_text})")
-        
+
         self._rebuild_version_options()
         self._update_version_inputs()
 
@@ -137,12 +153,16 @@ class MainWindow:
             self.status_var.set("版本信息刷新失败")
             self.step_var.set(f"刷新错误: {error_msg}")
             # 显示错误提示
-            self.show_message("刷新失败", f"无法获取最新版本信息：{error_msg}\n\n将继续使用本地版本信息", "warning")
+            self.show_message(
+                "刷新失败",
+                f"无法获取最新版本信息：{error_msg}\n\n将继续使用本地版本信息",
+                "warning",
+            )
         else:
-            self.status_var.set("版本信息加载失败，使用默认配置")
+            self.status_var.set("版本信息加载失败, 使用默认配置")
             self.step_var.set(f"错误: {error_msg}")
-        
-        # 使用空的版本数据，让用户至少可以使用自定义选项
+
+        # 使用空的版本数据, 让用户至少可以使用自定义选项
         self.versions_data = {"releases": [], "prereleases": [], "ci_builds": []}
         self._rebuild_version_options()
         self._update_version_inputs()
@@ -153,9 +173,9 @@ class MainWindow:
         for frame in [self.release_frame, self.prerelease_frame, self.ci_frame]:
             for widget in frame.winfo_children():
                 widget.destroy()
-        
+
         self.version_widgets.clear()
-        
+
         # 创建发行版选项
         releases = self.versions_data.get("releases", [])
         for version_info in releases:
@@ -164,11 +184,11 @@ class MainWindow:
                 text=version_info["name"],
                 variable=self.specific_version_var,
                 value=version_info["tag"],
-                bootstyle=SUCCESS,
+                bootstyle=INFO,
             )
             radio.pack(anchor=W, pady=1)
             self.version_widgets[version_info["tag"]] = radio
-        
+
         # 创建预发行版选项
         prereleases = self.versions_data.get("prereleases", [])
         for version_info in prereleases:
@@ -181,7 +201,7 @@ class MainWindow:
             )
             radio.pack(anchor=W, pady=1)
             self.version_widgets[version_info["tag"]] = radio
-        
+
         # 创建CI构建版选项
         ci_builds = self.versions_data.get("ci_builds", [])
         for version_info in ci_builds:
@@ -194,7 +214,7 @@ class MainWindow:
             )
             radio.pack(anchor=W, pady=1)
             self.version_widgets[version_info["tag"]] = radio
-        
+
         # 设置默认选择
         self._set_default_version_selection()
 
@@ -205,14 +225,14 @@ class MainWindow:
         if releases:
             self.specific_version_var.set(releases[0]["tag"])
             return
-        
-        # 如果没有发行版，选择最新的预发行版
+
+        # 如果没有发行版, 选择最新的预发行版
         prereleases = self.versions_data.get("prereleases", [])
         if prereleases:
             self.specific_version_var.set(prereleases[0]["tag"])
             return
-        
-        # 如果都没有，选择CI构建版
+
+        # 如果都没有, 选择CI构建版
         ci_builds = self.versions_data.get("ci_builds", [])
         if ci_builds:
             self.specific_version_var.set(ci_builds[0]["tag"])
@@ -222,23 +242,23 @@ class MainWindow:
         current_version = self.specific_version_var.get()
         if not current_version:
             return False
-        
+
         version_list_key = {
             "release": "releases",
-            "prerelease": "prereleases", 
-            "ci": "ci_builds"
+            "prerelease": "prereleases",
+            "ci": "ci_builds",
         }.get(version_type)
-        
+
         if not version_list_key:
             return False
-        
+
         versions = self.versions_data.get(version_list_key, [])
         return any(v["tag"] == current_version for v in versions)
 
     def _set_refresh_state(self, refreshing: bool):
         """设置刷新状态"""
         self.is_refreshing = refreshing
-        
+
         # 找到刷新按钮并更新状态
         for widget in self.root.winfo_children():
             self._update_refresh_button_recursive(widget, refreshing)
@@ -247,25 +267,28 @@ class MainWindow:
         """递归查找并更新刷新按钮状态"""
         try:
             # 检查是否是刷新按钮
-            if hasattr(widget, 'cget') and widget.cget('text') in ['🔄 刷新版本', '⏳ 刷新中...']:
+            if hasattr(widget, "cget") and widget.cget("text") in [
+                "🔄 刷新版本",
+                "⏳ 刷新中...",
+            ]:
                 if refreshing:
-                    widget.config(text='⏳ 刷新中...', state='disabled')
+                    widget.config(text="⏳ 刷新中...", state="disabled")
                 else:
-                    widget.config(text='🔄 刷新版本', state='normal')
-            
+                    widget.config(text="🔄 刷新版本", state="normal")
+
             # 递归检查子控件
             for child in widget.winfo_children():
                 self._update_refresh_button_recursive(child, refreshing)
         except:
-            # 忽略任何错误，继续处理其他控件
+            # 忽略任何错误, 继续处理其他控件
             pass
 
     def _disable_refresh_button_recursive(self, widget):
         """递归禁用刷新按钮"""
         try:
-            if hasattr(widget, 'cget') and '刷新版本' in widget.cget('text'):
-                widget.config(state='disabled')
-            
+            if hasattr(widget, "cget") and "刷新版本" in widget.cget("text"):
+                widget.config(state="disabled")
+
             for child in widget.winfo_children():
                 self._disable_refresh_button_recursive(child)
         except:
@@ -274,9 +297,9 @@ class MainWindow:
     def _enable_refresh_button_recursive(self, widget):
         """递归启用刷新按钮"""
         try:
-            if hasattr(widget, 'cget') and '刷新版本' in widget.cget('text'):
-                widget.config(state='normal')
-            
+            if hasattr(widget, "cget") and "刷新版本" in widget.cget("text"):
+                widget.config(state="normal")
+
             for child in widget.winfo_children():
                 self._enable_refresh_button_recursive(child)
         except:
@@ -286,17 +309,20 @@ class MainWindow:
         """刷新版本信息"""
         if self.is_installing or self.is_refreshing:
             return  # 安装过程中或正在刷新时不允许重复刷新
-        
+
         # 设置刷新状态
         self._set_refresh_state(True)
         self.status_var.set("正在刷新版本信息...")
         self.step_var.set("从GitHub API获取最新版本信息")
-        
+
         # 清除缓存
         version_manager.refresh_cache()
-        
+
         # 重新加载版本信息
         self._load_versions_async(is_refresh=True)
+
+    def _handle_frame_resize(self, newFrameHeight):
+        self.root.geometry(f"600x{str(570 + newFrameHeight)}")
 
     def _center_window(self):
         """窗口居中显示"""
@@ -375,11 +401,12 @@ class MainWindow:
             parent, text="版本选择", padding=15, bootstyle=INFO
         )
         version_frame.pack(fill=X, pady=(0, 15))
+        self.version_frame = version_frame
 
         # 版本类型选择标题和刷新按钮
         type_header_frame = ttk_bs.Frame(version_frame)
         type_header_frame.pack(fill=X, pady=(0, 5))
-        
+
         type_label = ttk_bs.Label(
             type_header_frame,
             text="版本类型：",
@@ -387,13 +414,13 @@ class MainWindow:
             bootstyle=PRIMARY,
         )
         type_label.pack(side=LEFT)
-        
+
         # 刷新版本信息按钮
         refresh_btn = ttk_bs.Button(
             type_header_frame,
             text="🔄 刷新版本",
             command=self._refresh_versions,
-            bootstyle=(SECONDARY, "outline"),
+            bootstyle=(INFO, "outline"),
             width=12,
         )
         refresh_btn.pack(side=RIGHT)
@@ -402,7 +429,7 @@ class MainWindow:
         version_types = [
             ("release", "发行版"),
             ("prerelease", "预发行版"),
-            ("ci", "自动构建版"),
+            ("ci", "CI 版"),
             ("custom_version", "自定义版本"),
             ("custom_path", "本地文件"),
         ]
@@ -422,8 +449,8 @@ class MainWindow:
         self.specific_version_frame = ttk_bs.LabelFrame(
             version_frame, text="具体版本", padding=10, bootstyle=SECONDARY
         )
-        
-        # 版本选择框架（将动态创建）
+
+        # 版本选择框架 (将动态创建)
         self.release_frame = ttk_bs.Frame(self.specific_version_frame)
         self.prerelease_frame = ttk_bs.Frame(self.specific_version_frame)
         self.ci_frame = ttk_bs.Frame(self.specific_version_frame)
@@ -587,7 +614,10 @@ class MainWindow:
                 self.specific_version_frame.pack(fill=X, pady=(10, 0))
                 self.release_frame.pack(fill=X)
                 # 设置默认选择
-                if not self.specific_version_var.get() or not self._is_valid_version_for_type("release"):
+                if (
+                    not self.specific_version_var.get()
+                    or not self._is_valid_version_for_type("release")
+                ):
                     self.specific_version_var.set(releases[0]["tag"])
 
         elif version_type == "prerelease":
@@ -597,7 +627,10 @@ class MainWindow:
                 self.specific_version_frame.pack(fill=X, pady=(10, 0))
                 self.prerelease_frame.pack(fill=X)
                 # 设置默认选择
-                if not self.specific_version_var.get() or not self._is_valid_version_for_type("prerelease"):
+                if (
+                    not self.specific_version_var.get()
+                    or not self._is_valid_version_for_type("prerelease")
+                ):
                     self.specific_version_var.set(prereleases[0]["tag"])
 
         elif version_type == "ci":
@@ -607,7 +640,10 @@ class MainWindow:
                 self.specific_version_frame.pack(fill=X, pady=(10, 0))
                 self.ci_frame.pack(fill=X)
                 # 设置默认选择
-                if not self.specific_version_var.get() or not self._is_valid_version_for_type("ci"):
+                if (
+                    not self.specific_version_var.get()
+                    or not self._is_valid_version_for_type("ci")
+                ):
                     self.specific_version_var.set(ci_builds[0]["tag"])
 
         elif version_type == "custom_version":
@@ -628,6 +664,13 @@ class MainWindow:
             self.custom_path_entry.config(state=DISABLED)
             self.browse_file_btn.config(state=DISABLED)
 
+        self.root.after(
+            50, # Ensure comp upd finished
+            lambda: self._handle_frame_resize(
+                self.version_frame.winfo_height() if self.version_frame else 300
+            ),
+        )
+
     def _browse_file(self):
         """浏览文件"""
         filename = filedialog.askopenfilename(
@@ -647,7 +690,7 @@ class MainWindow:
         """安装按钮点击事件"""
         if self.install_callback:
             version_type = self.version_var.get()
-            
+
             # 根据版本类型确定最终的版本值
             if version_type in ["release", "prerelease", "ci"]:
                 # 使用具体选择的版本
@@ -658,7 +701,7 @@ class MainWindow:
             else:
                 # 其他情况使用版本类型
                 final_version = version_type
-            
+
             # 收集安装选项
             options = {
                 "version": final_version,

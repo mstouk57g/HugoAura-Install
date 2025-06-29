@@ -21,7 +21,7 @@ def parse_arguments():
     # 版本选择参数组 (互斥)
     version_group = parser.add_mutually_exclusive_group()
     version_group.add_argument(
-        "-v", "--version", help="指定要安装的版本标签，例如 v1.0.0", type=str
+        "-v", "--version", help="指定要安装的版本标签, 例如 v1.0.0", type=str
     )
     version_group.add_argument(
         "-p", "--path", help="指定本地安装文件路径 (.asar 文件)", type=str
@@ -64,7 +64,7 @@ def print_exit_codes():
 
 def main():
     """
-    主函数，处理命令行参数并执行提权安装流程
+    主函数, 处理命令行参数并执行提权安装流程
     """
     args = parse_arguments()
 

@@ -1,15 +1,9 @@
-name: Update Version Information
+name: Update Version JSON
 
 on:
   repository_dispatch:
-    types: [hugoaura_release]
+    types: [hugoaura_rel]
   workflow_dispatch:
-    inputs:
-      force_update:
-        description: '强制更新版本信息'
-        required: false
-        default: 'false'
-        type: boolean
 
 jobs:
   update-versions:
@@ -24,7 +18,7 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.13'
         
     - name: Install dependencies
       run: |
@@ -32,7 +26,7 @@ jobs:
         
     - name: Update versions.json
       run: |
-        python .github/scripts/update_versions.py
+        python scripts/update_versions.py
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
@@ -51,29 +45,23 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add src/app/public/versions.json
-        git commit -m "自动更新版本信息 - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        git commit -m "[🔄 Chore] Auto update version json - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
         git push
         
     - name: Create Pull Request (if needed)
-      if: steps.verify-changed-files.outputs.changed == 'true' && github.event_name == 'repository_dispatch'
+      if: steps.verify-changed-files.outputs.changed == 'true'
       uses: peter-evans/create-pull-request@v5
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: "自动更新版本信息"
-        title: "自动更新 HugoAura 版本信息"
+        commit-message: "[🔄 Chore] Auto update version json"
+        title: "[🔄 Chore] 自动更新 HugoAura 版本信息"
         body: |
           ## 自动更新版本信息
           
-          此PR由GitHub Actions自动创建，用于更新HugoAura的版本信息。
-          
-          ### 更改内容
-          - 更新 `src/app/public/versions.json` 文件
-          - 同步最新的发行版和预发行版信息
+          此 PR 由 GitHub Actions 自动创建, 用于更新 HugoAura 的版本信息。
           
           ### 触发原因
-          HugoAura仓库发布了新版本，触发了版本信息更新。
-          
-          ---
-          *此PR由 repository_dispatch 事件自动触发*
-        branch: auto-update-versions
-        delete-branch: true 
+
+          HugoAura 主仓库发布了新版本 / 此工作流被手动 dispatch, 触发了版本信息更新。
+        branch: auto-ver-json-upd
+        delete-branch: true

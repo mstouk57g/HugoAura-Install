@@ -73,7 +73,7 @@ def download_file(url: str, dest_folder: str, filename: str) -> Path | str | Non
 
 def download_file_multi_sources(filename: str, dest_folder: str) -> Path | None:
     """
-    尝试从多个下载源下载文件，直到成功或所有源都失败。
+    尝试从多个下载源下载文件, 直到成功或所有源都失败。
     """
 
     global desiredTag
@@ -87,7 +87,7 @@ def download_file_multi_sources(filename: str, dest_folder: str) -> Path | None:
         elif result:
             return result  # type: ignore
         else:
-            log.warning(f"从 {url} 下载失败，尝试下一个源...")
+            log.warning(f"从 {url} 下载失败, 尝试下一个源...")
     log.critical(f"所有下载源均失败, 无法下载 {filename}")
     return None
 

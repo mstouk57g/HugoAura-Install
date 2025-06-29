@@ -64,8 +64,8 @@ def check_hugoaura_installation():
 
             # 必须同时满足以下条件才认为已安装：
             # 1. 注册表中有版本信息
-            # 2. 存在 app.asar 文件（被替换的希沃管家主程序）
-            # 3. 存在 aura 文件夹（HugoAura的资源文件）
+            # 2. 存在 app.asar 文件 (被替换的希沃管家主程序)
+            # 3. 存在 aura 文件夹 (HugoAura的资源文件)
             if (
                 install_info["version"]
                 and install_info["asar_path"]
@@ -197,7 +197,7 @@ def run_uninstallation(args=None, installerClassIns=None):
                     log.error(error_detail)
                     raise Exception(error_detail)
             else:
-                error_detail = "未找到原始ASAR备份文件，无法恢复希沃管家到原始状态"
+                error_detail = "未找到原始ASAR备份文件, 无法恢复希沃管家到原始状态"
                 log.error(error_detail)
                 log.warning("建议从官网重新下载希沃管家完整安装包")
                 raise Exception("OLD_ASAR_ENOENT")
@@ -214,10 +214,10 @@ def run_uninstallation(args=None, installerClassIns=None):
                 else:
                     log.info("Aura文件夹不存在, 跳过")
             except Exception as e:
-                error_detail = f"删除Aura文件夹失败: {e}，可能文件被占用"
+                error_detail = f"删除Aura文件夹失败: {e}, 可能文件被占用"
                 log.error(error_detail)
-                # Aura文件夹删除失败不是致命错误，记录警告但继续执行
-                log.warning("Aura文件夹删除失败，但不影响主要卸载流程")
+                # Aura文件夹删除失败不是致命错误, 记录警告但继续执行
+                log.warning("Aura文件夹删除失败, 但不影响主要卸载流程")
 
         update_progress(60, "[6 / 8] 清理注册表")
         try:

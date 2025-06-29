@@ -30,7 +30,7 @@ def select_release_source(args=None):
     选择安装版本来源
 
     参数:
-        args: 命令行参数对象，如果提供则尝试使用非交互式方式选择
+        args: 命令行参数对象, 如果提供则尝试使用非交互式方式选择
 
     返回:
         str: 版本标签或本地文件路径, 如果在非交互模式下失败则返回None
@@ -139,7 +139,7 @@ def run_installation(args=None, installerClassIns=None):
     运行安装流程
 
     参数:
-        args: 命令行参数对象，如果提供则尝试使用非交互式方式安装
+        args: 命令行参数对象, 如果提供则尝试使用非交互式方式安装
         installerClassIns: InstallerModel 实例
 
     返回:
@@ -220,7 +220,7 @@ def run_installation(args=None, installerClassIns=None):
                 )
                 if not downloaded_zip_path.exists():
                     log.critical(
-                        "未找到对应的文件，请确保本地路径同时包含 app-patched.asar 和 aura.zip 文件"
+                        "未找到对应的文件, 请确保本地路径同时包含 app-patched.asar 和 aura.zip 文件"
                     )
                     return False
             else:
@@ -258,7 +258,7 @@ def run_installation(args=None, installerClassIns=None):
                 log.warning(f"检测到嵌套文件夹, 自动移动中...")
                 expected_aura_source_path = potential_nested_path
             else:
-                error_detail = "Aura.zip 结构解析失败，文件结构不正确"
+                error_detail = "Aura.zip 结构解析失败, 文件结构不正确"
                 log.critical(error_detail)
                 raise Exception(error_detail)
 
@@ -355,11 +355,11 @@ def run_installation(args=None, installerClassIns=None):
                 log.success(f"替换 {config.TARGET_ASAR_NAME} 成功。")
                 install_success = True
             else:
-                error_detail = f"移动到 {original_asar_path} 失败，ASAR文件替换未成功"
+                error_detail = f"移动到 {original_asar_path} 失败, ASAR文件替换未成功"
                 log.critical(error_detail)
                 raise Exception(error_detail)
         except Exception as e:
-            error_detail = f"替换ASAR文件时发生错误: {e}。请检查文件系统过滤驱动已被卸载，并确认对希沃管家目录有写入权限。"
+            error_detail = f"替换ASAR文件时发生错误: {e}。请检查文件系统过滤驱动已被卸载, 并确认对希沃管家目录有写入权限。"
             log.critical(error_detail)
             raise Exception(error_detail)
 

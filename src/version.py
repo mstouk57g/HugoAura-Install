@@ -1,1 +1,1 @@
-__appVer__ = "v0.0.3-alpha"
+__appVer__ = "v0.0.3-beta-I"

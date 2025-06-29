@@ -1,6 +1,6 @@
 """
 版本管理器
-负责从GitHub API获取版本信息，失败时回退到本地JSON文件
+负责从GitHub API获取版本信息, 失败时回退到本地JSON文件
 """
 
 import json
@@ -20,7 +20,7 @@ class VersionManager:
         
         Args:
             github_repo: GitHub仓库名称 (owner/repo)
-            timeout: API请求超时时间（毫秒）
+            timeout: API请求超时时间 (毫秒)
         """
         self.github_repo = github_repo
         self.timeout = timeout / 1000.0  # 转换为秒
@@ -35,7 +35,7 @@ class VersionManager:
     def get_versions(self) -> Dict[str, List[Dict]]:
         """
         获取版本信息
-        优先从GitHub API获取，超时后使用本地JSON
+        优先从GitHub API获取, 超时后使用本地JSON
         
         Returns:
             包含releases、prereleases、ci_builds的字典
@@ -84,7 +84,7 @@ class VersionManager:
         从GitHub API获取版本信息
         
         Returns:
-            版本信息字典，失败时返回None
+            版本信息字典, 失败时返回None
         """
         try:
             # 获取所有releases
@@ -101,21 +101,24 @@ class VersionManager:
             for release in releases_data:
                 if release.get("draft", False):
                     continue  # 跳过草稿版本
-                    
+                
+                if "AutoBuild" in release["tag_name"]:
+                    continue  # 跳过 CI 版本
+
                 version_info = {
                     "tag": release["tag_name"],
-                    "name": f"[{'Pre' if release['prerelease'] else 'Rel'}] {release['name'] or release['tag_name']}",
+                    "name": f"{release['name'] or release['tag_name']}",
                     "type": "prerelease" if release["prerelease"] else "release",
                     "published_at": release.get("published_at"),
                     "download_url": self._get_download_url(release)
                 }
                 
-                if release["prerelease"]:
+                if release["prerelease"] and len(prereleases) <= 5: # 仅显示前 5 个版本
                     prereleases.append(version_info)
-                else:
+                elif len(releases) <= 5: # 同上
                     releases.append(version_info)
             
-            # CI构建版本（这个通常是固定的）
+            # CI 构建版本 (目前唯一)
             ci_builds = [
                 {
                     "tag": "vAutoBuild",
@@ -132,13 +135,13 @@ class VersionManager:
             }
             
         except requests.exceptions.Timeout:
-            log.warning(f"GitHub API请求超时 ({self.timeout}s)")
+            log.warning(f"GitHub API 请求超时 ({self.timeout}s)")
             return None
         except requests.exceptions.RequestException as e:
-            log.warning(f"GitHub API请求失败: {e}")
+            log.warning(f"GitHub API 请求失败: {e}")
             return None
         except Exception as e:
-            log.error(f"处理GitHub API响应时出错: {e}")
+            log.error(f"处理 GitHub API 响应时出错: {e}")
             return None
     
     def _get_download_url(self, release: Dict) -> Optional[str]:
@@ -149,7 +152,7 @@ class VersionManager:
             release: GitHub release信息
             
         Returns:
-            下载URL，如果没有找到合适的资源则返回None
+            下载URL, 如果没有找到合适的资源则返回None
         """
         assets = release.get("assets", [])
         
@@ -158,7 +161,7 @@ class VersionManager:
             if asset["name"].endswith(".asar"):
                 return asset["browser_download_url"]
         
-        # 如果没有.asar文件，返回第一个资源的下载链接
+        # 如果没有.asar文件, 返回第一个资源的下载链接
         if assets:
             return assets[0]["browser_download_url"]
             
@@ -182,7 +185,7 @@ class VersionManager:
         获取最新的发行版
         
         Returns:
-            最新发行版信息，如果没有则返回None
+            最新发行版信息, 如果没有则返回None
         """
         versions = self.get_versions()
         releases = versions.get("releases", [])
@@ -193,7 +196,7 @@ class VersionManager:
         获取最新的预发行版
         
         Returns:
-            最新预发行版信息，如果没有则返回None
+            最新预发行版信息, 如果没有则返回None
         """
         versions = self.get_versions()
         prereleases = versions.get("prereleases", [])
@@ -207,7 +210,7 @@ class VersionManager:
             tag: 版本标签
             
         Returns:
-            版本信息，如果没有找到则返回None
+            版本信息, 如果没有找到则返回None
         """
         versions = self.get_versions()
         

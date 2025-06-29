@@ -51,7 +51,7 @@ class MainController:
 
     def _on_install(self, options: Dict[str, Any]):
         """处理安装事件"""
-        logger.info(f"开始安装，选项: {options}")
+        logger.info(f"开始安装, 选项: {options}")
 
         try:
             # 更新模型的安装选项
@@ -124,7 +124,7 @@ class MainController:
                 self._check_installation_status()
             else:
                 self.view.show_message("失败", message, "error")
-                # 安装失败后也重新检查安装状态，以防部分安装成功
+                # 安装失败后也重新检查安装状态, 以防部分安装成功
                 self._check_installation_status()
 
         self.view.root.after(0, update_ui)
@@ -133,11 +133,11 @@ class MainController:
         """处理窗口关闭事件"""
         logger.info("用户请求关闭窗口")
 
-        # 如果正在执行操作，询问是否确认关闭
+        # 如果正在执行操作, 询问是否确认关闭
         if self.model.is_installing or self.model.is_uninstalling:
             operation = "安装" if self.model.is_installing else "卸载"
             if not messagebox.askyesno(
-                "确认", f"{operation}正在进行中，确定要退出吗？"
+                "确认", f"{operation}正在进行中, 确定要退出吗？"
             ):
                 return
 
@@ -158,7 +158,7 @@ class MainController:
     def _cleanup(self):
         """清理资源"""
         try:
-            # 等待安装线程结束（最多等待2秒）
+            # 等待安装线程结束 (最多等待2秒)
             if self.model.install_thread and self.model.install_thread.is_alive():
                 self.model.install_thread.join(timeout=2.0)
 
@@ -192,7 +192,7 @@ class MainController:
 
     def _on_uninstall(self, options: Dict[str, Any]):
         """处理卸载事件"""
-        logger.info(f"开始卸载，选项: {options}")
+        logger.info(f"开始卸载, 选项: {options}")
 
         try:
             # 更新模型的卸载选项
@@ -229,14 +229,14 @@ class MainController:
             is_installed = self.model.check_hugoaura_installed()
             
             if is_installed:
-                # 如果已安装，禁用安装按钮并更新状态
+                # 如果已安装, 禁用安装按钮并更新状态
                 self.view.set_install_button_state(False, "已安装")
                 self.view.update_status("HugoAura 已安装")
-                logger.info("检测到 HugoAura 已安装，安装按钮已禁用")
+                logger.info("检测到 HugoAura 已安装, 安装按钮已禁用")
             else:
-                # 如果未安装，确保安装按钮可用
+                # 如果未安装, 确保安装按钮可用
                 self.view.set_install_button_state(True, "开始安装")
-                logger.info("HugoAura 未安装，安装按钮可用")
+                logger.info("HugoAura 未安装, 安装按钮可用")
                 
         except Exception as e:
             logger.error(f"检查安装状态失败: {e}")

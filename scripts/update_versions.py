@@ -26,7 +26,7 @@ def get_github_releases(repo: str, token: str) -> List[Dict]:
     """
     url = f"https://api.github.com/repos/{repo}/releases"
     headers = {
-        "Authorization": f"token {token}",
+        "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github.v3+json"
     }
     
@@ -41,7 +41,7 @@ def get_github_releases(repo: str, token: str) -> List[Dict]:
 
 def process_releases(releases_data: List[Dict]) -> Dict:
     """
-    处理GitHub releases数据，分类为releases和prereleases
+    处理GitHub releases数据, 分类为releases和prereleases
     
     Args:
         releases_data: GitHub API返回的releases数据
@@ -70,7 +70,7 @@ def process_releases(releases_data: List[Dict]) -> Dict:
         else:
             releases.append(version_info)
     
-    # CI构建版本（固定）
+    # CI 构建版本 (固定)
     ci_builds = [
         {
             "tag": "vAutoBuild",
@@ -99,12 +99,12 @@ def get_download_url(release: Dict) -> str:
     """
     assets = release.get("assets", [])
     
-    # 寻找.asar文件
+    # 寻找 .asar 文件
     for asset in assets:
         if asset["name"].endswith(".asar"):
             return asset["browser_download_url"]
     
-    # 如果没有.asar文件，返回第一个资源的下载链接
+    # 如果没有 .asar 文件, 返回第一个资源的下载链接
     if assets:
         return assets[0]["browser_download_url"]
         
@@ -113,7 +113,7 @@ def get_download_url(release: Dict) -> str:
 
 def update_versions_file(versions_data: Dict, file_path: Path) -> bool:
     """
-    更新versions.json文件
+    更新 versions.json 文件
     
     Args:
         versions_data: 新的版本数据
@@ -128,14 +128,14 @@ def update_versions_file(versions_data: Dict, file_path: Path) -> bool:
             with open(file_path, 'r', encoding='utf-8') as f:
                 existing_data = json.load(f)
             
-            # 比较版本数据（忽略last_updated字段）
+            # 比较版本数据 (忽略 last_updated 字段)
             existing_copy = existing_data.copy()
             new_copy = versions_data.copy()
             existing_copy.pop('last_updated', None)
             new_copy.pop('last_updated', None)
             
             if existing_copy == new_copy:
-                print("ℹ️ 版本信息无变化，跳过更新")
+                print("ℹ️ 版本信息无变化, 跳过更新")
                 return False
         except (json.JSONDecodeError, KeyError) as e:
             print(f"⚠️ 读取现有版本文件失败: {e}")
@@ -160,12 +160,12 @@ def main():
     github_token = os.getenv("GITHUB_TOKEN")
     
     if not github_token:
-        print("❌ 未找到GITHUB_TOKEN环境变量")
+        print("❌ 未找到 GITHUB_TOKEN 环境变量")
         sys.exit(1)
     
     # 获取脚本所在目录的项目根目录
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent.parent
+    script_dir = Path(__file__)
+    project_root = script_dir.parent
     versions_file = project_root / "src" / "app" / "public" / "versions.json"
     
     print(f"🚀 开始更新版本信息...")
@@ -173,7 +173,7 @@ def main():
     print(f"📄 版本文件: {versions_file}")
     
     # 获取GitHub releases
-    print("📡 正在获取GitHub releases...")
+    print("📡 正在获取 GitHub releases...")
     releases_data = get_github_releases(HUGOAURA_REPO, github_token)
     print(f"✅ 获取到 {len(releases_data)} 个版本")
     

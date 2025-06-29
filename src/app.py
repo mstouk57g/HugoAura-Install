@@ -13,7 +13,7 @@ import main as cliEntryMain
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-# 在PyInstaller环境中，需要特殊处理导入
+# 在PyInstaller环境中, 需要特殊处理导入
 try:
     from logger.initLogger import setup_logger
 except ImportError as e:
@@ -71,7 +71,7 @@ def show_error_dialog(message):
         messagebox.showerror("AuraInstaller 错误", message)
         root.destroy()
     except:
-        # 如果连tkinter都不可用，就用系统消息框
+        # 如果连tkinter都不可用, 就用系统消息框
         try:
             ctypes.windll.user32.MessageBoxW(0, message, "AuraInstaller 错误", 0x10)
         except:
@@ -86,14 +86,14 @@ def main():
             print("AuraInstaller 需要管理员权限才能正常工作")
             print("正在请求管理员权限...")
             if not run_as_admin():
-                sys.exit(0)  # 已启动新的管理员进程，退出当前进程
+                sys.exit(0)  # 已启动新的管理员进程, 退出当前进程
         
         # 初始化日志系统
         try:
             setup_logger()
         except Exception as e:
             print(f"日志初始化失败: {e}")
-            # 继续执行，不让日志问题阻止程序运行
+            # 继续执行, 不让日志问题阻止程序运行
         
         if "--cli" in sys.argv:
             # 以 CLI 模式启动
