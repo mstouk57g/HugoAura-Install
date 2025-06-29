@@ -24,6 +24,9 @@ class MainController:
         # 设置模型回调
         self._setup_model_callbacks()
 
+        # 检查安装状态并更新UI
+        self._check_installation_status()
+
         logger.info("主控制器初始化完成")
 
     def _bind_events(self):
@@ -117,8 +120,12 @@ class MainController:
 
             if success:
                 self.view.show_message("成功", message, "info")
+                # 安装成功后重新检查安装状态
+                self._check_installation_status()
             else:
                 self.view.show_message("失败", message, "error")
+                # 安装失败后也重新检查安装状态，以防部分安装成功
+                self._check_installation_status()
 
         self.view.root.after(0, update_ui)
 
@@ -214,6 +221,27 @@ class MainController:
             logger.error(f"卸载启动失败: {e}")
             self.view.show_message("错误", f"卸载启动失败: {str(e)}", "error")
             self.view.set_installing_state(False)
+
+    def _check_installation_status(self):
+        """检查HugoAura安装状态并更新UI"""
+        try:
+            # 检查是否已安装
+            is_installed = self.model.check_hugoaura_installed()
+            
+            if is_installed:
+                # 如果已安装，禁用安装按钮并更新状态
+                self.view.set_install_button_state(False, "已安装")
+                self.view.update_status("HugoAura 已安装")
+                logger.info("检测到 HugoAura 已安装，安装按钮已禁用")
+            else:
+                # 如果未安装，确保安装按钮可用
+                self.view.set_install_button_state(True, "开始安装")
+                logger.info("HugoAura 未安装，安装按钮可用")
+                
+        except Exception as e:
+            logger.error(f"检查安装状态失败: {e}")
+            # 出错时默认允许安装
+            self.view.set_install_button_state(True, "开始安装")
 
 
 # 便捷函数

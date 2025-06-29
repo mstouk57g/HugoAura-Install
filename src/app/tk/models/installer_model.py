@@ -8,7 +8,7 @@ from typing import Callable, Optional, Dict, Any
 import argparse
 
 from installer import run_installation
-from uninstaller import run_uninstallation, get_uninstall_info
+from uninstaller import run_uninstallation, get_uninstall_info, check_hugoaura_installation
 
 
 class InstallerModel:
@@ -284,3 +284,12 @@ class InstallerModel:
             "status": self.install_status,
             "current_step": self.current_step,
         }
+
+    def check_hugoaura_installed(self) -> bool:
+        """检查HugoAura是否已安装"""
+        try:
+            is_installed, _ = check_hugoaura_installation()
+            return is_installed
+        except Exception as e:
+            # 如果检查过程中出错，默认返回False（未安装）
+            return False

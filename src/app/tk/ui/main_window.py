@@ -462,6 +462,13 @@ Install 主仓库: HugoAura/HugoAura-Install"""
             self.directory_entry.config(state=NORMAL)
             self.browse_dir_btn.config(state=NORMAL)
 
+    def set_install_button_state(self, enabled: bool, text: str = "开始安装"):
+        """设置安装按钮状态"""
+        if enabled:
+            self.install_btn.config(state=NORMAL, text=text)
+        else:
+            self.install_btn.config(state=DISABLED, text=text)
+
     def show_message(self, title: str, message: str, msg_type: str = "info"):
         """显示消息对话框"""
         if msg_type == "error":
