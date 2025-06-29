@@ -22,7 +22,7 @@ class MainWindow:
         # 创建根窗口
         self.root = ttk_bs.Window(themename=theme)
         self.root.title("HugoAura 安装器")
-        self.root.geometry("600x810")
+        self.root.geometry("600x950")  # 增加窗口高度以适应更多选项
         self.root.resizable(False, False)
         self.root.iconbitmap(
             os.path.join(
@@ -41,7 +41,8 @@ class MainWindow:
         self.cancel_callback: Optional[Callable] = None
 
         # 控件变量
-        self.version_var = tk.StringVar(value="latest")
+        self.version_var = tk.StringVar(value="release")  # 版本类型：release, prerelease, ci, custom_version, custom_path
+        self.specific_version_var = tk.StringVar(value="v0.1.1-beta")  # 具体版本
         self.custom_version_var = tk.StringVar()
         self.custom_path_var = tk.StringVar()
         self.install_directory_var = tk.StringVar()
@@ -134,16 +135,25 @@ class MainWindow:
         )
         version_frame.pack(fill=X, pady=(0, 15))
 
-        # 版本选项
-        versions = [
-            ("latest", "最新稳定版"),
-            ("pre", "最新预发行版"),
-            ("ci", "CI 构建版"),
+        # 版本类型选择
+        type_label = ttk_bs.Label(
+            version_frame,
+            text="版本类型：",
+            font=("Microsoft YaHei UI", 10, "bold"),
+            bootstyle=PRIMARY,
+        )
+        type_label.pack(anchor=W, pady=(0, 5))
+
+        # 版本类型选项
+        version_types = [
+            ("release", "发行版"),
+            ("prerelease", "预发行版"),
+            ("ci", "自动构建版"),
             ("custom_version", "自定义版本"),
             ("custom_path", "本地文件"),
         ]
 
-        for value, text in versions:
+        for value, text in version_types:
             radio = ttk_bs.Radiobutton(
                 version_frame,
                 text=text,
@@ -152,12 +162,65 @@ class MainWindow:
                 command=self._update_version_inputs,
                 bootstyle=PRIMARY,
             )
-            radio.pack(anchor=W, pady=2)
+            radio.pack(anchor=W, pady=2, padx=(20, 0))
+
+        # 具体版本选择框架
+        self.specific_version_frame = ttk_bs.LabelFrame(
+            version_frame, text="具体版本", padding=10, bootstyle=SECONDARY
+        )
+        
+        # 发行版选项
+        self.release_frame = ttk_bs.Frame(self.specific_version_frame)
+        release_versions = [
+            ("v0.1.1-beta", "[Rel] v0.1.1-beta"),
+            ("v0.1.0-beta", "[Rel] v0.1.0 Beta"),
+        ]
+        for value, text in release_versions:
+            radio = ttk_bs.Radiobutton(
+                self.release_frame,
+                text=text,
+                variable=self.specific_version_var,
+                value=value,
+                bootstyle=SUCCESS,
+            )
+            radio.pack(anchor=W, pady=1)
+
+        # 预发行版选项
+        self.prerelease_frame = ttk_bs.Frame(self.specific_version_frame)
+        prerelease_versions = [
+            ("v0.1.1-pre-IV-patch-3", "[Pre] v0.1.1-pre-IV-patch-3"),
+            ("v0.1.1-pre-IV", "[Pre] v0.1.1-pre-IV"),
+            ("v0.1.1-pre-III", "[Pre] v0.1.1-pre-III"),
+            ("v0.1.1-pre-II", "[Pre] v0.1.1-pre-II"),
+            ("v0.1.1-pre-I", "[Pre] v0.1.1-pre-I"),
+        ]
+        for value, text in prerelease_versions:
+            radio = ttk_bs.Radiobutton(
+                self.prerelease_frame,
+                text=text,
+                variable=self.specific_version_var,
+                value=value,
+                bootstyle=WARNING,
+            )
+            radio.pack(anchor=W, pady=1)
+
+        # 自动构建版选项
+        self.ci_frame = ttk_bs.Frame(self.specific_version_frame)
+        ci_versions = [
+            ("vAutoBuild", "[CI] HugoAura Auto Build Release"),
+        ]
+        for value, text in ci_versions:
+            radio = ttk_bs.Radiobutton(
+                self.ci_frame,
+                text=text,
+                variable=self.specific_version_var,
+                value=value,
+                bootstyle=INFO,
+            )
+            radio.pack(anchor=W, pady=1)
 
         # 自定义版本输入框
         self.custom_version_frame = ttk_bs.Frame(version_frame)
-        # 初始状态下不显示
-
         ttk_bs.Label(self.custom_version_frame, text="版本号:").pack(side=LEFT)
         self.custom_version_entry = ttk_bs.Entry(
             self.custom_version_frame, textvariable=self.custom_version_var, width=20
@@ -166,8 +229,6 @@ class MainWindow:
 
         # 自定义文件路径
         self.custom_path_frame = ttk_bs.Frame(version_frame)
-        # 初始状态下不显示
-
         ttk_bs.Label(self.custom_path_frame, text="文件路径:").pack(side=LEFT)
         self.custom_path_entry = ttk_bs.Entry(
             self.custom_path_frame, textvariable=self.custom_path_var, width=30
@@ -300,28 +361,56 @@ class MainWindow:
 
     def _update_version_inputs(self):
         """更新版本输入控件状态"""
-        version = self.version_var.get()
+        version_type = self.version_var.get()
 
-        # 自定义版本输入框
-        if version == "custom_version":
+        # 隐藏所有具体版本选择框架
+        self.specific_version_frame.pack_forget()
+        self.release_frame.pack_forget()
+        self.prerelease_frame.pack_forget()
+        self.ci_frame.pack_forget()
+        self.custom_version_frame.pack_forget()
+        self.custom_path_frame.pack_forget()
+
+        if version_type == "release":
+            # 显示发行版选择
+            self.specific_version_frame.pack(fill=X, pady=(10, 0))
+            self.release_frame.pack(fill=X)
+            # 设置默认选择
+            if not self.specific_version_var.get() or self.specific_version_var.get() not in ["v0.1.1-beta", "v0.1.0-beta"]:
+                self.specific_version_var.set("v0.1.1-beta")
+
+        elif version_type == "prerelease":
+            # 显示预发行版选择
+            self.specific_version_frame.pack(fill=X, pady=(10, 0))
+            self.prerelease_frame.pack(fill=X)
+            # 设置默认选择
+            if not self.specific_version_var.get() or self.specific_version_var.get() not in ["v0.1.1-pre-IV-patch-3", "v0.1.1-pre-IV", "v0.1.1-pre-III", "v0.1.1-pre-II", "v0.1.1-pre-I"]:
+                self.specific_version_var.set("v0.1.1-pre-IV-patch-3")
+
+        elif version_type == "ci":
+            # 显示自动构建版选择
+            self.specific_version_frame.pack(fill=X, pady=(10, 0))
+            self.ci_frame.pack(fill=X)
+            # 设置默认选择
+            self.specific_version_var.set("vAutoBuild")
+
+        elif version_type == "custom_version":
+            # 显示自定义版本输入
             self.custom_version_entry.config(state=NORMAL)
             self.custom_version_frame.pack(fill=X, pady=(10, 0))
-        else:
-            self.custom_version_entry.config(state=DISABLED)
-            if version != "custom_path":
-                self.custom_version_frame.pack_forget()
 
-        # 自定义文件路径
-        if version == "custom_path":
+        elif version_type == "custom_path":
+            # 显示自定义文件路径选择
             self.custom_path_entry.config(state=NORMAL)
             self.browse_file_btn.config(state=NORMAL)
-            self.custom_path_frame.pack(fill=X, pady=(5, 0))
-            if version != "custom_version":
-                self.custom_version_frame.pack_forget()
-        else:
+            self.custom_path_frame.pack(fill=X, pady=(10, 0))
+
+        # 禁用其他输入控件
+        if version_type != "custom_version":
+            self.custom_version_entry.config(state=DISABLED)
+        if version_type != "custom_path":
             self.custom_path_entry.config(state=DISABLED)
             self.browse_file_btn.config(state=DISABLED)
-            self.custom_path_frame.pack_forget()
 
     def _browse_file(self):
         """浏览文件"""
@@ -341,9 +430,23 @@ class MainWindow:
     def _on_install_click(self):
         """安装按钮点击事件"""
         if self.install_callback:
+            version_type = self.version_var.get()
+            
+            # 根据版本类型确定最终的版本值
+            if version_type in ["release", "prerelease", "ci"]:
+                # 使用具体选择的版本
+                final_version = self.specific_version_var.get()
+            elif version_type == "custom_version":
+                # 使用自定义版本号
+                final_version = self.custom_version_var.get()
+            else:
+                # 其他情况使用版本类型
+                final_version = version_type
+            
             # 收集安装选项
             options = {
-                "version": self.version_var.get(),
+                "version": final_version,
+                "version_type": version_type,  # 保留版本类型信息
                 "custom_version": self.custom_version_var.get(),
                 "custom_path": self.custom_path_var.get(),
                 "install_directory": self.install_directory_var.get(),

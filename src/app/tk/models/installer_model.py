@@ -248,17 +248,38 @@ class InstallerModel:
         args.dir = None
         args.dry_run = False
 
-        version_type = self.install_options["version"]
-        if version_type == "latest":
-            args.latest = True
-        elif version_type == "pre":
-            args.pre = True
-        elif version_type == "ci":
-            args.ci = True
-        elif version_type == "custom_version":
-            args.version = self.install_options["custom_version"]
-        elif version_type == "custom_path":
+        version = self.install_options["version"]
+        version_type = self.install_options.get("version_type", "")
+        
+        # 内置版本标签列表
+        built_in_versions = [
+            "v0.1.1-beta",
+            "v0.1.0-beta", 
+            "v0.1.1-pre-IV-patch-3",
+            "v0.1.1-pre-IV",
+            "v0.1.1-pre-III",
+            "v0.1.1-pre-II",
+            "v0.1.1-pre-I",
+            "vAutoBuild"
+        ]
+        
+        # 根据版本类型和具体版本进行处理
+        if version_type == "custom_path" or version == "custom_path":
             args.path = self.install_options["custom_path"]
+        elif version in built_in_versions:
+            # 处理内置版本标签
+            args.version = version
+        elif version_type == "custom_version" or version == "custom_version":
+            args.version = self.install_options["custom_version"]
+        elif version == "latest":
+            args.latest = True
+        elif version == "pre":
+            args.pre = True
+        elif version == "ci":
+            args.ci = True
+        else:
+            # 默认情况，可能是其他自定义版本
+            args.version = version
 
         if self.install_options["install_directory"]:
             args.dir = self.install_options["install_directory"]
