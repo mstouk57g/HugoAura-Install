@@ -240,8 +240,9 @@ def run_installation(args=None, installerClassIns=None):
         update_progress(40, "[4 / 10] 解压资源文件")
         temp_extract_path = Path(config.TEMP_INSTALL_DIR + "\\aura")
         if not fileDownloader.unzip_file(downloaded_zip_path, temp_extract_path):
-            log.critical("资源文件解压失败, 即将结束安装")
-            return False
+            error_detail = "资源文件解压失败"
+            log.critical(error_detail)
+            raise Exception(error_detail)
 
         expected_aura_source_path = temp_extract_path
         if not expected_aura_source_path.is_dir():
@@ -257,8 +258,9 @@ def run_installation(args=None, installerClassIns=None):
                 log.warning(f"检测到嵌套文件夹, 自动移动中...")
                 expected_aura_source_path = potential_nested_path
             else:
-                log.critical("Aura.zip 结构解析失败, 即将结束安装")
-                return False
+                error_detail = "Aura.zip 结构解析失败，文件结构不正确"
+                log.critical(error_detail)
+                raise Exception(error_detail)
 
         update_progress(50, "[5 / 10] 卸载文件系统过滤驱动")
         try:
@@ -299,8 +301,9 @@ def run_installation(args=None, installerClassIns=None):
                 shutil.move(str(expected_aura_source_path), str(target_aura_path))
             log.success(f"成功移动文件夹 '{config.EXTRACTED_FOLDER_NAME}'")
         except Exception as e:
-            log.critical(f"移动文件夹 '{config.EXTRACTED_FOLDER_NAME}' 时发生错误: {e}")
-            return False
+            error_detail = f"移动文件夹 '{config.EXTRACTED_FOLDER_NAME}' 时发生错误: {e}"
+            log.critical(error_detail)
+            raise Exception(error_detail)
 
         update_progress(70, "[7 / 10] 启动结束进程后台任务")
         if not args.dry_run:
@@ -348,18 +351,17 @@ def run_installation(args=None, installerClassIns=None):
             log.info(f"正在将 {temp_asar_path} 移到 {original_asar_path}...")
             if not args.dry_run:
                 shutil.move(str(temp_asar_path), str(original_asar_path))
-            if original_asar_path.exists():
+            if original_asar_path.exists() or args.dry_run:
                 log.success(f"替换 {config.TARGET_ASAR_NAME} 成功。")
                 install_success = True
             else:
-                log.critical(f"移动到 {original_asar_path} 失败, 请尝试手动操作。")
-                install_success = False
+                error_detail = f"移动到 {original_asar_path} 失败，ASAR文件替换未成功"
+                log.critical(error_detail)
+                raise Exception(error_detail)
         except Exception as e:
-            log.critical(f"移动文件时发生未知错误: {e}")
-            log.critical(
-                "请再次检查文件系统过滤驱动已被 unload, 并检查对希沃管家目录的可写入性。"
-            )
-            install_success = False
+            error_detail = f"替换ASAR文件时发生错误: {e}。请检查文件系统过滤驱动已被卸载，并确认对希沃管家目录有写入权限。"
+            log.critical(error_detail)
+            raise Exception(error_detail)
 
         update_progress(90, "[9 / 10] 写入版本信息和安装时间到注册表")
         # 写入版本信息和安装时间到注册表

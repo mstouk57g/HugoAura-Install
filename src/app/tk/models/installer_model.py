@@ -151,12 +151,25 @@ class InstallerModel:
             else:
                 self.update_status("安装失败")
                 if self.completed_callback:
-                    match str(result["errorInfo"]):
-                        case _:
-                            error_detail = str(result["errorInfo"])
-                    self.completed_callback(
-                        False, f"安装过程中发生错误:\n{error_detail}"
-                    )
+                    error_info = result.get("errorInfo", "未知错误")
+                    if hasattr(error_info, '__str__'):
+                        error_detail = str(error_info)
+                    else:
+                        error_detail = "安装过程中发生未知错误"
+                    
+                    # 根据错误类型提供更详细的错误信息
+                    if "资源文件解压失败" in error_detail:
+                        error_message = f"安装失败：{error_detail}\n\n可能原因：\n- 下载的文件损坏\n- 磁盘空间不足\n- 临时目录权限问题"
+                    elif "文件结构不正确" in error_detail:
+                        error_message = f"安装失败：{error_detail}\n\n可能原因：\n- 下载的压缩包格式不正确\n- 文件在传输过程中损坏"
+                    elif "移动文件夹" in error_detail:
+                        error_message = f"安装失败：{error_detail}\n\n可能原因：\n- 目标目录权限不足\n- 磁盘空间不足\n- 文件被其他程序占用"
+                    elif "替换ASAR文件" in error_detail:
+                        error_message = f"安装失败：{error_detail}\n\n可能原因：\n- 希沃管家正在运行\n- 文件系统过滤驱动未正确卸载\n- 目标目录权限不足"
+                    else:
+                        error_message = f"安装过程中发生错误：\n{error_detail}"
+                    
+                    self.completed_callback(False, error_message)
 
         except Exception as e:
             self.update_status("安装失败")
@@ -197,16 +210,22 @@ class InstallerModel:
             else:
                 self.update_status("卸载失败")
                 if self.completed_callback:
-                    match str(result["errorInfo"]):
-                        case "OLD_ASAR_ENOENT":
-                            error_detail = "找不到备份的 ASAR 包\n请尝试从 e.seewo.com 重新下载希沃管家完整包进行重装"
-                        case "UNINSTALLATION_CANCELLED":
-                            error_detail = "用户取消了卸载"
-                        case _:
-                            error_detail = str(result["errorInfo"])
-                    self.completed_callback(
-                        False, f"卸载过程中发生错误:\n{error_detail}"
-                    )
+                    error_info = result.get("errorInfo", "未知错误")
+                    error_str = str(error_info) if hasattr(error_info, '__str__') else "未知错误"
+                    
+                    # 根据错误类型提供更详细的错误信息和解决方案
+                    if "OLD_ASAR_ENOENT" in error_str:
+                        error_message = "卸载失败：找不到原始ASAR备份文件\n\n无法将希沃管家恢复到原始状态。\n\n建议解决方案：\n1. 从希沃官网(e.seewo.com)重新下载希沃管家完整安装包\n2. 卸载当前希沃管家后重新安装"
+                    elif "UNINSTALLATION_CANCELLED" in error_str:
+                        error_message = "卸载已被用户取消"
+                    elif "恢复原始ASAR文件失败" in error_str:
+                        error_message = f"卸载失败：{error_str}\n\n可能原因：\n- 文件被占用或权限不足\n- 磁盘空间不足\n\n建议：关闭希沃管家相关程序后重试"
+                    elif "删除Aura文件夹失败" in error_str:
+                        error_message = f"部分卸载失败：{error_str}\n\n主要卸载流程已完成，但清理工作未完全成功。\n建议手动删除残留文件。"
+                    else:
+                        error_message = f"卸载过程中发生错误：\n{error_str}"
+                    
+                    self.completed_callback(False, error_message)
 
         except Exception as e:
             self.update_status("卸载失败")
