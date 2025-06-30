@@ -9,9 +9,8 @@ block_cipher = None
 
 # 定义数据文件
 datas = [
-    # 包含图标文件
     (str(src_dir / 'app' / 'public' / 'installer.ico'), 'app/public'),
-    # 包含配置文件
+    (str(src_dir / 'app' / 'public' / 'versions.json'), 'app/public'),
     (str(src_dir / 'config'), 'config'),
 ]
 
