@@ -19,3 +19,4 @@ charset-normalizer==3.4.1
 idna==3.10
 colorama==0.4.6
 win32-setctime==1.2.0
+aiohttp>=3.12.14

@@ -13,6 +13,10 @@ from config.config import (
 )
 import typeDefs.lifecycle
 import lifecycle as lifecycleMgr
+import asyncio
+import aiohttp
+import time
+from typing import List, Tuple
 
 
 desiredTag = None
@@ -71,14 +75,78 @@ def download_file(url: str, dest_folder: str, filename: str) -> Path | str | Non
         return None
 
 
-def download_file_multi_sources(filename: str, dest_folder: str) -> Path | None:
-    """
-    尝试从多个下载源下载文件, 直到成功或所有源都失败。
-    """
+async def test_download_source_speed(
+    base_url: str, test_filename: str = None
+) -> Tuple[str, float, bool]:
+    test_url = f"{base_url}/{desiredTag}/{ASAR_FILENAME}" if test_filename else base_url
 
+    try:
+        start_time = time.time()
+
+        async with aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=10)
+        ) as session:
+            async with session.head(test_url) as response:
+                if response.status == 200:
+                    response_time = time.time() - start_time
+                    return (base_url, response_time, True)
+                else:
+                    return (base_url, float("inf"), False)
+
+    except Exception as e:
+        log.warning(f"测速失败 {base_url}: {e}")
+        return (base_url, float("inf"), False)
+
+
+async def benchmark_download_sources(tag_name: str) -> List[str]:
+    log.info("正在测试下载源速度...")
+
+    tasks = [
+        test_download_source_speed(url, ASAR_FILENAME) for url in BASE_DOWNLOAD_URLS
+    ]
+    results = await asyncio.gather(*tasks)
+
+    # 筛选可用源并按响应时间排序
+    available_sources = [(url, time) for url, time, available in results if available]
+    available_sources.sort(key=lambda x: x[1])
+
+    sorted_urls = [url for url, _ in available_sources]
+
+    # 输出测速结果
+    for url, response_time in available_sources[:3]:  # 只输出前 3 个最快的
+        log.info(
+            f"下载源 {url.split('//')[1].split('/')[0]} 响应时间: {response_time:.2f}s"
+        )
+
+    return sorted_urls if sorted_urls else BASE_DOWNLOAD_URLS
+
+
+def download_file_multi_sources(
+    filename: str, dest_folder: str, use_speed_optimization: bool = True
+) -> Path | None:
+    """
+    尝试从多个下载源下载文件
+    """
     global desiredTag
 
-    for base_url in BASE_DOWNLOAD_URLS:
+    download_urls = BASE_DOWNLOAD_URLS
+
+    if use_speed_optimization and desiredTag:
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            optimized_urls = loop.run_until_complete(
+                benchmark_download_sources(desiredTag)
+            )
+            loop.close()
+
+            if optimized_urls:
+                download_urls = optimized_urls
+                log.info("测速完成, 将按测速顺序进行下载")
+        except Exception as e:
+            log.warning(f"测速失败, 使用默认顺序: {e}")
+
+    for base_url in download_urls:
         url = f"{base_url}/{desiredTag}/{filename}"
         result = download_file(url, dest_folder, filename)
         if result == "DL_CANCEL":
