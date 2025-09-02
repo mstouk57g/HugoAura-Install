@@ -18,12 +18,15 @@ EXTRACTED_FOLDER_NAME = "aura"
 
 # 下载 URL 列表
 BASE_DOWNLOAD_URLS = [
-    f"https://gh.llkk.cc/https://github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download",  # LLKK.top 镜像
-    f"https://bgithub.xyz/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download",  # bgithub 镜像
-    f"https://ghfast.top/github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download",  # GHFast 镜像
-    f"https://ghproxy.net/github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download", # GHProxy 镜像
-    f"https://github.tbedu.top/github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download", # TBEdu 镜像
-    f"https://github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download",  # GitHub 源
+    f"https://gh.llkk.cc/https://github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download",
+    f"https://gitproxy.127731.xyz/github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download",
+    f"https://bgithub.xyz/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download",
+    f"https://github.dpik.top/github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download",
+    f"https://gh.catmak.name/github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download",
+    f"https://ghfast.top/github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download",
+    f"https://ghproxy.net/github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download",
+    f"https://github.tbedu.top/github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download",
+    f"https://github.com/{GITHUB_OWNER}/{GITHUB_DL_REPO}/releases/download",
 ]
 
 # GitHub API URL
