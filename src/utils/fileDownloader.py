@@ -7,7 +7,6 @@ from pathlib import Path
 from loguru import logger as log
 from config.config import (
     BASE_DOWNLOAD_URLS,
-    ASAR_FILENAME,
     ZIP_FILENAME,
     TEMP_INSTALL_DIR,
 )
@@ -78,7 +77,7 @@ def download_file(url: str, dest_folder: str, filename: str) -> Path | str | Non
 async def test_download_source_speed(
     base_url: str, test_filename: str = None
 ) -> Tuple[str, float, bool]:
-    test_url = f"{base_url}/{desiredTag}/{ASAR_FILENAME}" if test_filename else base_url
+    test_url = f"{base_url}/{desiredTag}/{ZIP_FILENAME}" if test_filename else base_url
 
     try:
         start_time = time.time()
@@ -102,7 +101,7 @@ async def benchmark_download_sources(tag_name: str) -> List[str]:
     log.info("正在测试下载源速度...")
 
     tasks = [
-        test_download_source_speed(url, ASAR_FILENAME) for url in BASE_DOWNLOAD_URLS
+        test_download_source_speed(url, ZIP_FILENAME) for url in BASE_DOWNLOAD_URLS
     ]
     results = await asyncio.gather(*tasks)
 

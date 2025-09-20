@@ -213,16 +213,9 @@ def run_installation(args=None, installerClassIns=None):
         )
         if not str.startswith(download_source, "v"):
             if os.path.exists(download_source):
-                downloaded_zip_path = Path(
-                    str(download_source).replace("app-patched.asar", "aura.zip")
-                )
-                if not downloaded_zip_path.exists():
-                    log.critical(
-                        "未找到对应的文件, 请确保本地路径同时包含 app-patched.asar 和 aura.zip 文件"
-                    )
-                    return False
+                downloaded_zip_path = Path(str(download_source))
             else:
-                log.critical("请输入合法的路径")
+                log.critical("请输入合法的路径，并确保本地路径存在 aura.zip 文件")
                 return False
         else:
             lifecycleMgr.callbacks[dlCallbackFuncName] = rep_dl_progress
@@ -262,8 +255,8 @@ def run_installation(args=None, installerClassIns=None):
 
         PatchResult = asarPatcher.patch_asar_file(
             input_asar_path=str(install_dir_path / config.TARGET_ASAR_NAME),
-            temp_extract_dir=str(config.TEMP_INSTALL_DIR + "\\asar_temp"),
-            output_asar_path=str(config.TEMP_INSTALL_DIR + "\\app-patched.asar"),
+            temp_extract_dir=str(Path(config.TEMP_INSTALL_DIR) / "asar_temp"),
+            output_asar_path=str(Path(config.TEMP_INSTALL_DIR) / config.ASAR_FILENAME),
             core_dir=str(Path(config.TEMP_INSTALL_DIR) / "aura" / "core")
         )
         if not PatchResult[0]:
