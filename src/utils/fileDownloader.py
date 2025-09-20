@@ -198,14 +198,9 @@ def download_release_files(tagName) -> tuple[Path | None, Path | None]:
         )
         return None, None
 
-    downloaded_asar_path = download_file_multi_sources(ASAR_FILENAME, str(temp_dir))
-    if not downloaded_asar_path:
-        log.critical("下载 app-patched.asar 时发生错误, 安装进程终止。")
-        return None, None
-
     downloaded_zip_path = download_file_multi_sources(ZIP_FILENAME, str(temp_dir))
     if not downloaded_zip_path:
         log.critical("下载 aura.zip 时发生错误, 安装进程终止。")
-        return downloaded_asar_path, None
+        return None
 
-    return downloaded_asar_path, downloaded_zip_path
+    return downloaded_zip_path
