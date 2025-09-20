@@ -8,7 +8,7 @@ import winreg
 import requests
 from pathlib import Path
 from logger.initLogger import log
-from utils import dirSearch, fileDownloader, killer
+from utils import dirSearch, fileDownloader, killer, asarPatcher
 from config import config
 
 
@@ -144,7 +144,6 @@ def run_installation(args=None):
     """
     install_success = False
     install_dir_path = None
-    downloaded_asar_path = None
     downloaded_zip_path = None
     download_source = None
 
@@ -185,23 +184,15 @@ def run_installation(args=None):
         log.info("[3 / 10] 获取资源文件")
         if not str.startswith(download_source, "v"):
             if os.path.exists(download_source):
-                downloaded_asar_path = Path(download_source)
-                downloaded_zip_path = Path(
-                    str(download_source).replace("app-patched.asar", "aura.zip")
-                )
-                if not downloaded_zip_path.exists():
-                    log.critical(
-                        "未找到对应的文件，请确保本地路径同时包含 app-patched.asar 和 aura.zip 文件"
-                    )
-                    return False
+                downloaded_zip_path = Path(str(download_source))
             else:
-                log.critical("请输入合法的路径")
+                log.critical("请输入合法的路径，并确保本地路径存在 aura.zip 文件")
                 return False
         else:
-            downloaded_asar_path, downloaded_zip_path = (
+            downloaded_zip_path = (
                 fileDownloader.download_release_files(download_source)
             )
-        if not downloaded_asar_path or not downloaded_zip_path:
+        if not downloaded_zip_path:
             log.critical("资源文件下载失败, 即将结束安装")
             return False
 
@@ -227,6 +218,18 @@ def run_installation(args=None):
             else:
                 log.critical("Aura.zip 结构解析失败, 即将结束安装")
                 return False
+
+        PatchResult = asarPatcher.patch_asar_file(
+            input_asar_path=str(install_dir_path / config.TARGET_ASAR_NAME),
+            temp_extract_dir=str(Path(config.TEMP_INSTALL_DIR) / "asar_temp"),
+            output_asar_path=str(Path(config.TEMP_INSTALL_DIR) / config.ASAR_FILENAME),
+            core_dir=str(Path(config.TEMP_INSTALL_DIR) / "aura" / "core")
+        )
+        if not PatchResult[0]:
+            error_detail = f"ASAR 文件修改失败: {PatchResult[1]}"
+            log.critical(error_detail)
+            raise Exception(error_detail)
+        log.info(f"ASAR 文件修改成功, 输出路径: {PatchResult[1]}")
 
         log.info("[5 / 10] 卸载文件系统过滤驱动")
         try:
@@ -277,9 +280,9 @@ def run_installation(args=None):
 
         log.info("[8 / 10] 替换 ASAR 包")
         original_asar_path = install_dir_path / config.TARGET_ASAR_NAME
-        temp_asar_path = downloaded_asar_path
+        temp_asar_path = PatchResult[1]
 
-        log.info(f"正在将 {original_asar_path} 替换为新的 {temp_asar_path.name}...")
+        log.info(f"正在将 {original_asar_path} 替换为新的 {temp_asar_path}...")
 
         def del_original_asar():
             if original_asar_path.exists():
