@@ -150,6 +150,8 @@ def run_installation(args=None, installerClassIns=None):
     downloaded_zip_path = None
     downloaded_core_path = None
     download_source = None
+    ssa_asar = config.TARGET_ASAR_NAME
+    if_patch = True
 
     error_detail = ""
 
@@ -258,18 +260,6 @@ def run_installation(args=None, installerClassIns=None):
                 log.critical(error_detail)
                 raise Exception(error_detail)
 
-        PatchResult = asarPatcher.patch_asar_file(
-            input_asar_path=str(install_dir_path / config.TARGET_ASAR_NAME),
-            temp_extract_dir=str(Path(config.TEMP_INSTALL_DIR) / "asar_temp"),
-            output_asar_path=str(Path(config.TEMP_INSTALL_DIR) / config.ASAR_FILENAME),
-            core_dir=str(temp_extract_path_core)
-        )
-        if not PatchResult[0]:
-            error_detail = f"ASAR 文件修改失败: {PatchResult[1]}"
-            log.critical(error_detail)
-            raise Exception(error_detail)
-        log.info(f"ASAR 文件修改成功, 输出路径: {PatchResult[1]}")
-
         update_progress(50, "[5 / 10] 卸载文件系统过滤驱动")
         try:
             if not args.dry_run:
@@ -305,6 +295,19 @@ def run_installation(args=None, installerClassIns=None):
                 if not args.dry_run:
                     shutil.rmtree(target_aura_path)
                     time.sleep(0.1)
+                ssa_asar = "app.asar.bak"
+                if os.path.exists(install_dir_path / ssa_asar):
+                    log.warning(
+                        "Patch ASAR 将使用备份的ASAR，请确保其完整并未更改..."
+                    )
+                else:
+                    log.warning(
+                        "app.asar.bak未找到，将不进行Patch操作..."
+                    )
+                    log.warning(
+                        "若现有的app.asar为未patch过的，请将其复制到app.asar.bak。"
+                    )
+                    if_patch = False
             if not args.dry_run:
                 shutil.move(str(expected_aura_source_path), str(target_aura_path))
             log.success(f"成功移动文件夹 '{config.EXTRACTED_FOLDER_NAME}'")
@@ -312,64 +315,79 @@ def run_installation(args=None, installerClassIns=None):
             error_detail = f"移动文件夹 '{config.EXTRACTED_FOLDER_NAME}' 时发生错误: {e}"
             log.critical(error_detail)
             raise Exception(error_detail)
+            
+        if if_patch:
+            update_progress(65, "[6.5 / 10] Patch ASAR")
+            PatchResult = asarPatcher.patch_asar_file(
+                input_asar_path=str(install_dir_path / ssa_asar),
+                temp_extract_dir=str(Path(config.TEMP_INSTALL_DIR) / "asar_temp"),
+                output_asar_path=str(Path(config.TEMP_INSTALL_DIR) / config.ASAR_FILENAME),
+                core_dir=str(temp_extract_path_core)
+            )
+            if not PatchResult[0]:
+                error_detail = f"ASAR 文件修改失败: {PatchResult[1]}"
+                log.critical(error_detail)
+                raise Exception(error_detail)
+            log.info(f"ASAR 文件修改成功, 输出路径: {PatchResult[1]}")
 
         update_progress(70, "[7 / 10] 启动结束进程后台任务")
         if not args.dry_run:
             killer.start_killing_process()
             time.sleep(2.0)
 
-        update_progress(80, "[8 / 10] 替换 ASAR 包")
-        original_asar_path = install_dir_path / config.TARGET_ASAR_NAME
-        temp_asar_path = PatchResult[1]
+        if if_patch:
+            update_progress(80, "[8 / 10] 替换 ASAR 包")
+            original_asar_path = install_dir_path / config.TARGET_ASAR_NAME
+            temp_asar_path = PatchResult[1]
 
-        log.info(f"正在将 {original_asar_path} 替换为新的 {temp_asar_path}...")
+            log.info(f"正在将 {original_asar_path} 替换为新的 {temp_asar_path}...")
 
-        # 创建原始ASAR文件的备份
-        backup_asar_path = install_dir_path / "app.asar.bak"
-        if original_asar_path.exists() and not backup_asar_path.exists():
-            try:
-                log.info(f"创建原始ASAR备份: {backup_asar_path}")
-                if not args.dry_run:
-                    shutil.copy2(str(original_asar_path), str(backup_asar_path))
-                log.success("原始ASAR备份创建成功")
-            except Exception as e:
-                log.warning(f"创建ASAR备份失败: {e}")
-
-        def del_original_asar():
-            if original_asar_path.exists():
-                log.info(f"尝试删除旧的 {original_asar_path}...")
+            # 创建原始ASAR文件的备份
+            backup_asar_path = install_dir_path / "app.asar.bak"
+            if original_asar_path.exists() and not backup_asar_path.exists():
                 try:
+                    log.info(f"创建原始ASAR备份: {backup_asar_path}")
                     if not args.dry_run:
-                        os.remove(original_asar_path)
-                    log.success(f"旧的 {config.TARGET_ASAR_NAME} 删除成功。")
-                    time.sleep(0.2)
-                except OSError as e:
-                    log.error(
-                        f"未能删除 {original_asar_path}: {e} | 旧的 ASAR 可能仍被占用中..."
-                    )
-                    log.info("准备重试删除...")
-                    time.sleep(0.5)
-                    del_original_asar()
-            else:
-                log.info(f"未找到旧的 {config.TARGET_ASAR_NAME}, 跳过删除...")
+                        shutil.copy2(str(original_asar_path), str(backup_asar_path))
+                    log.success("原始ASAR备份创建成功")
+                except Exception as e:
+                    log.warning(f"创建ASAR备份失败: {e}")
 
-        del_original_asar()
+            def del_original_asar():
+                if original_asar_path.exists():
+                    log.info(f"尝试删除旧的 {original_asar_path}...")
+                    try:
+                        if not args.dry_run:
+                            os.remove(original_asar_path)
+                        log.success(f"旧的 {config.TARGET_ASAR_NAME} 删除成功。")
+                        time.sleep(0.2)
+                    except OSError as e:
+                        log.error(
+                            f"未能删除 {original_asar_path}: {e} | 旧的 ASAR 可能仍被占用中..."
+                        )
+                        log.info("准备重试删除...")
+                        time.sleep(0.5)
+                        del_original_asar()
+                else:
+                    log.info(f"未找到旧的 {config.TARGET_ASAR_NAME}, 跳过删除...")
 
-        try:
-            log.info(f"正在将 {temp_asar_path} 移到 {original_asar_path}...")
-            if not args.dry_run:
-                shutil.move(str(temp_asar_path), str(original_asar_path))
-            if original_asar_path.exists() or args.dry_run:
-                log.success(f"替换 {config.TARGET_ASAR_NAME} 成功。")
-                install_success = True
-            else:
-                error_detail = f"移动到 {original_asar_path} 失败, ASAR文件替换未成功"
+            del_original_asar()
+
+            try:
+                log.info(f"正在将 {temp_asar_path} 移到 {original_asar_path}...")
+                if not args.dry_run:
+                    shutil.move(str(temp_asar_path), str(original_asar_path))
+                if original_asar_path.exists() or args.dry_run:
+                    log.success(f"替换 {config.TARGET_ASAR_NAME} 成功。")
+                    install_success = True
+                else:
+                    error_detail = f"移动到 {original_asar_path} 失败, ASAR文件替换未成功"
+                    log.critical(error_detail)
+                    raise Exception(error_detail)
+            except Exception as e:
+                error_detail = f"替换ASAR文件时发生错误: {e}。请检查文件系统过滤驱动已被卸载, 并确认对希沃管家目录有写入权限。"
                 log.critical(error_detail)
                 raise Exception(error_detail)
-        except Exception as e:
-            error_detail = f"替换ASAR文件时发生错误: {e}。请检查文件系统过滤驱动已被卸载, 并确认对希沃管家目录有写入权限。"
-            log.critical(error_detail)
-            raise Exception(error_detail)
 
         update_progress(90, "[9 / 10] 写入版本信息和安装时间到注册表")
         # 写入版本信息和安装时间到注册表
