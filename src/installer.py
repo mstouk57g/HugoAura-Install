@@ -388,6 +388,9 @@ def run_installation(args=None, installerClassIns=None):
                 error_detail = f"替换ASAR文件时发生错误: {e}。请检查文件系统过滤驱动已被卸载, 并确认对希沃管家目录有写入权限。"
                 log.critical(error_detail)
                 raise Exception(error_detail)
+        else:
+            install_success = True
+
 
         update_progress(90, "[9 / 10] 写入版本信息和安装时间到注册表")
         # 写入版本信息和安装时间到注册表
