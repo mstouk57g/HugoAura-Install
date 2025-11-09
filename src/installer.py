@@ -148,6 +148,7 @@ def run_installation(args=None, installerClassIns=None):
     install_success = False
     install_dir_path = None
     downloaded_zip_path = None
+    downloaded_core_path = None
     download_source = None
 
     error_detail = ""
@@ -214,15 +215,18 @@ def run_installation(args=None, installerClassIns=None):
         if not str.startswith(download_source, "v"):
             if os.path.exists(download_source):
                 downloaded_zip_path = Path(str(download_source))
+                downloaded_core_path = Path(
+                    str(download_source).replace("aura.zip", "core.zip")
+                )
             else:
                 log.critical("请输入合法的路径，并确保本地路径存在 aura.zip 文件")
                 return False
         else:
             lifecycleMgr.callbacks[dlCallbackFuncName] = rep_dl_progress
-            downloaded_zip_path = (
+            downloaded_core_path, downloaded_zip_path = (
                 fileDownloader.download_release_files(download_source)
             )
-        if not downloaded_zip_path:
+        if not downloaded_core_path or not downloaded_zip_path:
             log.critical("资源文件下载失败, 即将结束安装")
             return False
 
@@ -230,7 +234,8 @@ def run_installation(args=None, installerClassIns=None):
 
         update_progress(40, "[4 / 10] 解压资源文件")
         temp_extract_path = Path(config.TEMP_INSTALL_DIR + "\\aura")
-        if not fileDownloader.unzip_file(downloaded_zip_path, temp_extract_path):
+        temp_extract_path_core  = Path(config.TEMP_INSTALL_DIR + "\\core")
+        if not fileDownloader.unzip_file(downloaded_zip_path, temp_extract_path) or not fileDownloader.unzip_file(downloaded_core_path, temp_extract_path_core):
             error_detail = "资源文件解压失败"
             log.critical(error_detail)
             raise Exception(error_detail)
@@ -257,7 +262,7 @@ def run_installation(args=None, installerClassIns=None):
             input_asar_path=str(install_dir_path / config.TARGET_ASAR_NAME),
             temp_extract_dir=str(Path(config.TEMP_INSTALL_DIR) / "asar_temp"),
             output_asar_path=str(Path(config.TEMP_INSTALL_DIR) / config.ASAR_FILENAME),
-            core_dir=str(Path(config.TEMP_INSTALL_DIR) / "aura" / "core")
+            core_dir=str(temp_extract_path_core)
         )
         if not PatchResult[0]:
             error_detail = f"ASAR 文件修改失败: {PatchResult[1]}"
