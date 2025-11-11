@@ -8,7 +8,8 @@ from typing import Optional, Tuple
 from logger.initLogger import log
 from config.config import (
     BASE_DOWNLOAD_URLS,
-    ZIP_FILENAME,
+    AURA_FILENAME,
+    CORE_FILENAME,
     TEMP_INSTALL_DIR,
 )
 
@@ -109,9 +110,14 @@ def download_release_files(tagName) -> Tuple[Optional[Path], Optional[Path]]:
         )
         return None, None
 
-    downloaded_zip_path = download_file_multi_sources(ZIP_FILENAME, str(temp_dir))
+    downloaded_core_path = download_file_multi_sources(CORE_FILENAME, str(temp_dir))
+    if not downloaded_core_path:
+        log.critical("下载 app-patched.asar 时发生错误, 安装进程终止。")
+        return None, None
+    
+    downloaded_zip_path = download_file_multi_sources(AURA_FILENAME, str(temp_dir))
     if not downloaded_zip_path:
         log.critical("下载 aura.zip 时发生错误, 安装进程终止。")
-        return None
+        return downloaded_core_path, None
 
-    return downloaded_zip_path
+    return downloaded_core_path, downloaded_zip_path
